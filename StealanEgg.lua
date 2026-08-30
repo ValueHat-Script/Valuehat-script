@@ -25,18 +25,36 @@ local acBypassEnabled = false
 local speedChangerEnabled = false
 local autoStealEnabled = false
 local fixedSpeed = 500
-local currentHipHeight = 2 -- 預設 HipHeight
-local smoothSpeed = 150 -- 預設平滑移動速度 (studs/s)
+local currentHipHeight = 2
+local smoothSpeed = 150
+
+-- 區域座標表
+local AreaLocations = {
+    ["Forest"] = Vector3.new(595, 71, -325),
+    ["Lake"] = Vector3.new(740, 71, -413),
+    ["Desert"] = Vector3.new(949, 71, -320),
+    ["Jungle"] = Vector3.new(1184, 71, -413),
+    ["Snow"] = Vector3.new(1490, 71, -316),
+    ["Volcano"] = Vector3.new(1883, 71, -405),
+    ["Abyss Ocean"] = Vector3.new(2280, 71, -329),
+    ["Prehistoric"] = Vector3.new(2804, 71, -395),
+    ["Cosmic"] = Vector3.new(3390, 71, -326),
+    ["Cherry Blossom"] = Vector3.new(4027, 71, -398)
+}
+local selectedArea = "Forest"
 
 local originalHumanoid = nil
 local fakeHumanoid = nil
 local speedConnection = nil
 local autoStealThread = nil
 
--- Remote Function 設定
-local AskFieldEggCarry = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("Networking")
-    :WaitForChild("RF/EggWorld/AskFieldEggCarry")
+-- Remote Function 安全取得
+local AskFieldEggCarry
+pcall(function()
+    AskFieldEggCarry = ReplicatedStorage:WaitForChild("Packages", 5)
+        :WaitForChild("Networking", 5)
+        :WaitForChild("RF/EggWorld/AskFieldEggCarry", 5)
+end)
 
 --------------------------------------------------
 -- 1. HipHeight 設置與維護邏輯
@@ -54,11 +72,6 @@ local function setHipHeight(val)
         end
     end)
 end
-
-LocalPlayer.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    setHipHeight(currentHipHeight)
-end)
 
 --------------------------------------------------
 -- 2. Anti-Cheat Bypass 核心邏輯
@@ -95,14 +108,15 @@ local function setupAntiCheatBypass(enable)
 end
 
 LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    setHipHeight(currentHipHeight)
     if acBypassEnabled then
-        task.wait(0.5)
         setupAntiCheatBypass(true)
     end
 end)
 
 --------------------------------------------------
--- 3. Speed Changer (鎖定為 500 速度)
+-- 3. Speed Changer
 --------------------------------------------------
 local function updateSpeedLock()
     if speedConnection then
@@ -133,7 +147,6 @@ end
 -- 4. Smooth 移動與 Auto Steal 邏輯
 --------------------------------------------------
 
--- 取得物件主體 CFrame (相容 Model 或 Part)
 local function getModelCFrame(model)
     if model:IsA("Model") then
         if model.PrimaryPart then
@@ -147,7 +160,6 @@ local function getModelCFrame(model)
     return nil
 end
 
--- Smooth 移動函式 (Tween)
 local function smoothMoveTo(targetCFrame, moveSpeed)
     local char = LocalPlayer.Character
     if not char then return false end
@@ -187,23 +199,27 @@ local function smoothMoveTo(targetCFrame, moveSpeed)
     return true
 end
 
--- 取得亂碼蛋 Model 列表
-local function getGarbageEggModels()
+-- 取得特定區域周圍（200 studs 內）的蛋，避免跑去別區
+local function getGarbageEggModelsNear(areaCenter, maxDistance)
+    maxDistance = maxDistance or 200 -- 搜尋範圍半徑
     local eggSlots = workspace:FindFirstChild("AreaEggSlotsClient")
-    if not eggSlots then return {} end
+    if not eggSlots or not areaCenter then return {} end
 
     local validEggs = {}
     for _, child in ipairs(eggSlots:GetChildren()) do
-        if child:IsA("Model") then
-            if #child.Name >= 10 or string.match(child.Name, "%x%x%x%x%x+") then
-                table.insert(validEggs, child)
+        if child:IsA("Model") and (#child.Name >= 10 or string.match(child.Name, "%x%x%x%x%x+")) then
+            local eggCF = getModelCFrame(child)
+            if eggCF then
+                local dist = (eggCF.Position - areaCenter).Magnitude
+                if dist <= maxDistance then
+                    table.insert(validEggs, child)
+                end
             end
         end
     end
     return validEggs
 end
 
--- 取得指定的基地目標
 local function getTargetBaseCFrame()
     local success, base = pcall(function()
         return workspace.__OBJECTS.Build.MainMap.Bases:GetChildren()[8]
@@ -224,59 +240,58 @@ local function startAutoSteal()
 
     autoStealThread = task.spawn(function()
         while autoStealEnabled do
-            local eggs = getGarbageEggModels()
+            local areaPos = AreaLocations[selectedArea]
             
-            if #eggs > 0 then
-                local targetEgg = eggs[math.random(1, #eggs)]
-                local targetUid = targetEgg.Name
-                local targetCF = getModelCFrame(targetEgg)
+            if areaPos then
+                -- 1. 平滑移動至指定的區域
+                local arrivedArea = smoothMoveTo(CFrame.new(areaPos), smoothSpeed)
 
-                if targetCF then
-                    local arrivalCF = targetCF * CFrame.new(0, 1, 0)
+                if arrivedArea and autoStealEnabled then
+                    -- 2. 停頓 0.5 秒
+                    task.wait(0.5)
+
+                    -- 3. 嚴格限定：只尋找該區域半徑 200 studs 內的蛋
+                    local eggs = getGarbageEggModelsNear(areaPos, 200)
                     
-                    -- 1. Smooth 移動至該蛋
-                    local arrived = smoothMoveTo(arrivalCF, smoothSpeed)
+                    if #eggs > 0 then
+                        local targetEgg = eggs[math.random(1, #eggs)]
+                        local targetUid = targetEgg.Name
+                        local targetCF = getModelCFrame(targetEgg)
 
-                    if arrived and autoStealEnabled then
-                        local successCarry = false
-                        local retryCount = 0
-                        local maxRetries = 10 -- 最多重試 10 次
+                        if targetCF and AskFieldEggCarry then
+                            -- 移動至該區域內的目標蛋
+                            smoothMoveTo(targetCF * CFrame.new(0, 1, 0), smoothSpeed)
 
-                        -- 2. 輪詢確認 Remote 執行結果與狀態
-                        while not successCarry and retryCount < maxRetries and autoStealEnabled do
-                            local char = LocalPlayer.Character
-                            local root = char and char:FindFirstChild("HumanoidRootPart")
-                            if root then
-                                root.CFrame = arrivalCF
-                            end
+                            local successCarry = false
+                            local retryCount = 0
 
-                            local success, result = pcall(function()
-                                return AskFieldEggCarry:InvokeServer({
-                                    Uid = targetUid
-                                })
-                            end)
+                            while not successCarry and retryCount < 10 and autoStealEnabled do
+                                local success, result = pcall(function()
+                                    return AskFieldEggCarry:InvokeServer({
+                                        Uid = targetUid
+                                    })
+                                end)
 
-                            if success and (result == true or result == "Success") then
-                                successCarry = true
-                            else
-                                retryCount = retryCount + 1
-                                task.wait(0.1)
+                                if success and (result == true or result == "Success") then
+                                    successCarry = true
+                                else
+                                    retryCount = retryCount + 1
+                                    task.wait(0.1)
+                                end
                             end
                         end
+                    end
 
-                        -- 3. 返回指定基地
-                        local baseCF = getTargetBaseCFrame()
-                        if baseCF and autoStealEnabled then
-                            smoothMoveTo(baseCF * CFrame.new(0, 3, 0), smoothSpeed)
-                        end
-                        
-                        task.wait(0.2)
+                    -- 4. 拿完蛋後返回基地 (Base 8)
+                    local baseCF = getTargetBaseCFrame()
+                    if baseCF and autoStealEnabled then
+                        smoothMoveTo(baseCF * CFrame.new(0, 3, 0), smoothSpeed)
                     end
                 end
             else
                 task.wait(1)
             end
-            task.wait(0.1)
+            task.wait(0.2)
         end
     end)
 end
@@ -285,15 +300,38 @@ end
 -- WindUI 分頁與組件綁定
 --------------------------------------------------
 
--- Tab 1: Anti-Cheat Bypass & Automation
 local MainTab = Window:Tab({ Title = "Anti-Cheat Bypass", Icon = "shield-alert" })
 
 MainTab:Section({ Title = "Automation & Farm" })
 
+-- 區域選擇 Dropdown
+MainTab:Dropdown({
+    Title = "Select Area",
+    Desc = "Choose target area to travel before searching eggs.",
+    Values = {
+        "Forest", "Lake", "Desert", "Jungle", "Snow",
+        "Volcano", "Abyss Ocean", "Prehistoric", "Cosmic", "Cherry Blossom"
+    },
+    Value = "Forest",
+    Callback = function(Option)
+        if type(Option) == "table" then
+            selectedArea = Option[1] or Option.Value or Option.Name or "Forest"
+        elseif type(Option) == "string" then
+            selectedArea = Option
+        end
+
+        WindUI:Notify({
+            Title = "Area Selected",
+            Content = "Target set to: " .. tostring(selectedArea),
+            Duration = 2
+        })
+    end,
+})
+
 -- Auto Steal 開關
 MainTab:Toggle({
     Title = "Auto Steal Egg",
-    Desc = "Smoothly moves to eggs, triggers remote with retry verification, and returns to Base 8.",
+    Desc = "Moves to selected area, pauses, triggers remote, and returns to Base 8.",
     Value = false,
     Callback = function(Value)
         autoStealEnabled = Value
@@ -312,10 +350,10 @@ MainTab:Toggle({
     end,
 })
 
--- Smooth Speed 平滑移動速度滑桿
+-- Smooth Speed 滑桿
 MainTab:Slider({
     Title = "Smooth Movement Speed",
-    Desc = "Adjusts the Tween speed when traveling to eggs and returning to Base.",
+    Desc = "Adjusts the Tween speed when traveling.",
     Value = {
         Min = 10,
         Max = 1000,
@@ -323,13 +361,16 @@ MainTab:Slider({
     },
     Step = 10,
     Callback = function(Value)
-        smoothSpeed = Value
+        if type(Value) == "table" then
+            smoothSpeed = Value.Value or Value[1] or 150
+        else
+            smoothSpeed = Value
+        end
     end,
 })
 
 MainTab:Section({ Title = "Anti-Cheat & Speed" })
 
--- 1. Enable Anti-Cheat Bypass 開關
 MainTab:Toggle({
     Title = "Enable Anti-Cheat Bypass",
     Desc = "Replaces the Humanoid so the server's WalkSpeed governor writes to a dead object.",
@@ -346,7 +387,6 @@ MainTab:Toggle({
     end,
 })
 
--- 2. Speed Changer 開關
 MainTab:Toggle({
     Title = "Speed Changer",
     Desc = "Locks WalkSpeed to 500 every frame. Requires Bypass active.",
@@ -363,7 +403,6 @@ MainTab:Toggle({
     end,
 })
 
--- 3. TP Tool 按鈕
 MainTab:Button({
     Title = "Get TP Tool",
     Desc = "Gives you a Teleport Tool in your backpack.",
@@ -385,18 +424,21 @@ local PlayerTab = Window:Tab({ Title = "Local Player", Icon = "user" })
 
 PlayerTab:Section({ Title = "Humanoid Settings" })
 
--- HipHeight 滑桿
 PlayerTab:Slider({
     Title = "HipHeight",
     Desc = "Adjusts your character's height off the ground.",
     Value = {
-        Min = 0,
-        Max = 50,
+        Min = 2,
+        Max = 10,
         Default = 2
     },
     Step = 1,
     Callback = function(Value)
-        setHipHeight(Value)
+        local val = Value
+        if type(Value) == "table" then
+            val = Value.Value or Value[1] or 2
+        end
+        setHipHeight(val)
     end,
 })
 
@@ -404,4 +446,112 @@ WindUI:Notify({
     Title = "Shard Hub Loaded",
     Content = "Anti-Cheat, Auto Steal & Custom Speed Controls Ready.",
     Duration = 4
+})
+--------------------------------------------------
+-- Tab 3: Auto
+--------------------------------------------------
+
+local AutoTab = Window:Tab({
+    Title = "Auto",
+    Icon = "zap"
+})
+
+AutoTab:Section({
+    Title = "Auto Automation"
+})
+
+local autoClaimIndexEnabled = false
+local autoEquipBestEnabled = false
+
+local autoClaimIndexThread = nil
+local autoEquipBestThread = nil
+
+--------------------------------------------------
+-- Remote Functions
+--------------------------------------------------
+
+local AskRedeemAll
+local WearBest
+
+pcall(function()
+    local Networking = ReplicatedStorage
+        :WaitForChild("Packages", 5)
+        :WaitForChild("Networking", 5)
+
+    AskRedeemAll = Networking:WaitForChild("RF/Codex/AskRedeemAll", 5)
+    WearBest = Networking:WaitForChild("RF/Haul/WearBest", 5)
+end)
+
+--------------------------------------------------
+-- Automation Threads
+--------------------------------------------------
+
+local function startAutoClaimIndex()
+    if autoClaimIndexThread then
+        task.cancel(autoClaimIndexThread)
+        autoClaimIndexThread = nil
+    end
+
+    autoClaimIndexThread = task.spawn(function()
+        while autoClaimIndexEnabled do
+            if AskRedeemAll then
+                pcall(function()
+                    AskRedeemAll:InvokeServer()
+                end)
+            end
+            task.wait(2)
+        end
+    end)
+end
+
+local function startAutoEquipBest()
+    if autoEquipBestThread then
+        task.cancel(autoEquipBestThread)
+        autoEquipBestThread = nil
+    end
+
+    autoEquipBestThread = task.spawn(function()
+        while autoEquipBestEnabled do
+            if WearBest then
+                pcall(function()
+                    WearBest:InvokeServer()
+                end)
+            end
+            task.wait(2)
+        end
+    end)
+end
+
+--------------------------------------------------
+-- Toggles
+--------------------------------------------------
+
+AutoTab:Toggle({
+    Title = "Auto Claim Index Reward",
+    Desc = "Automatically redeems all available index rewards.",
+    Value = false,
+    Callback = function(Value)
+        autoClaimIndexEnabled = Value
+        if Value then
+            startAutoClaimIndex()
+        elseif autoClaimIndexThread then
+            task.cancel(autoClaimIndexThread)
+            autoClaimIndexThread = nil
+        end
+    end,
+})
+
+AutoTab:Toggle({
+    Title = "Auto Equip Best",
+    Desc = "Automatically equips your best available equipment.",
+    Value = false,
+    Callback = function(Value)
+        autoEquipBestEnabled = Value
+        if Value then
+            startAutoEquipBest()
+        elseif autoEquipBestThread then
+            task.cancel(autoEquipBestThread)
+            autoEquipBestThread = nil
+        end
+    end,
 })
