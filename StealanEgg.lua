@@ -24,7 +24,9 @@ local LocalPlayer = Players.LocalPlayer
 local acBypassEnabled = false
 local speedChangerEnabled = false
 local autoStealEnabled = false
+
 local fixedSpeed = 500
+local customPlayerSpeed = 16
 local currentHipHeight = 2
 local smoothSpeed = 150
 
@@ -39,12 +41,11 @@ local AreaLocations = {
     ["Abyss Ocean"] = Vector3.new(2280, 71, -329),
     ["Prehistoric"] = Vector3.new(2804, 71, -395),
     ["Cosmic"] = Vector3.new(3390, 71, -326),
-    ["Cherry Blossom"] = Vector3.new(4027, 71, -398)
+    ["Cherry Blossom"] = Vector3.new(4027, 71, -398),
+    ["Titan Temple"] = Vector3.new(4801, 71, -331)
 }
 local selectedArea = "Forest"
 
-local originalHumanoid = nil
-local fakeHumanoid = nil
 local speedConnection = nil
 local autoStealThread = nil
 
@@ -76,43 +77,95 @@ end
 --------------------------------------------------
 -- 2. Anti-Cheat Bypass 核心邏輯
 --------------------------------------------------
-local function setupAntiCheatBypass(enable)
-    local char = LocalPlayer.Character
-    if not char then return end
+local function setupAntiCheatBypass(d)
+    local e = d:FindFirstChildOfClass("Humanoid")
+    if not e then return end
     
-    local hum = char:FindFirstChildOfClass("Humanoid")
+    local f = workspace.CurrentCamera
+    local g = d:FindFirstChild("Animate")
+    local h = e.WalkSpeed
+    local i = e.JumpPower
+    local j = e.JumpHeight
+    local k = e.Health
+    local l = e.MaxHealth
     
-    if enable then
-        if hum and hum ~= fakeHumanoid then
-            hum.Archivable = true
-            fakeHumanoid = hum:Clone()
-            fakeHumanoid.Name = "Humanoid_Bypass"
-            fakeHumanoid.Parent = char
-            
-            originalHumanoid = hum
-            originalHumanoid.Parent = nil
-            
-            workspace.CurrentCamera.CameraSubject = fakeHumanoid
-        end
-    else
-        if originalHumanoid then
-            originalHumanoid.Parent = char
-            workspace.CurrentCamera.CameraSubject = originalHumanoid
-            originalHumanoid = nil
-        end
-        if fakeHumanoid then
-            fakeHumanoid:Destroy()
-            fakeHumanoid = nil
-        end
+    if g and g:IsA("LocalScript") then 
+        g.Disabled = true 
     end
+    
+    local m = e:FindFirstChildOfClass("Animator")
+    if m then 
+        for _, n in next, m:GetPlayingAnimationTracks() do 
+            n:Stop(0) 
+        end 
+    end
+    
+    e.Archivable = true
+    local o = e:Clone()
+    for _, p in next, o:GetChildren() do 
+        if p:IsA("Animator") then 
+            p:Destroy() 
+        end 
+    end
+    
+    e.Name = "_OldHumanoid"
+    o.Name = "Humanoid"
+    o.Parent = d
+    
+    local q = Instance.new("Animator")
+    q.Parent = o
+    
+    o.WalkSpeed = speedChangerEnabled and fixedSpeed or customPlayerSpeed
+    o.JumpPower = i
+    o.JumpHeight = j
+    o.MaxHealth = l
+    o.Health = math.min(k, l)
+    
+    if f then 
+        f.CameraSubject = o 
+    end
+    
+    e:Destroy()
+    
+    if g and g:IsA("LocalScript") then 
+        task.wait()
+        g.Disabled = false
+        task.defer(function()
+            if g.Parent then 
+                g.Disabled = true
+                task.wait()
+                g.Disabled = false 
+            end 
+        end)
+    end
+    
+    task.defer(function()
+        if o.Parent then 
+            o:ChangeState(Enum.HumanoidStateType.Running) 
+        end 
+    end)
+    
+    pcall(function()
+        o.HipHeight = currentHipHeight
+    end)
+    
+    return o
 end
 
-LocalPlayer.CharacterAdded:Connect(function(char)
+local function onCharacterAdded(s)
+    s:WaitForChild("Humanoid")
     task.wait(0.5)
-    setHipHeight(currentHipHeight)
     if acBypassEnabled then
-        setupAntiCheatBypass(true)
+        setupAntiCheatBypass(s)
     end
+    setHipHeight(currentHipHeight)
+end
+
+if LocalPlayer.Character then 
+    task.spawn(onCharacterAdded, LocalPlayer.Character) 
+end
+LocalPlayer.CharacterAdded:Connect(function(s)
+    task.spawn(onCharacterAdded, s)
 end)
 
 --------------------------------------------------
@@ -138,7 +191,7 @@ local function updateSpeedLock()
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum then
-            hum.WalkSpeed = 16
+            hum.WalkSpeed = customPlayerSpeed
         end
     end
 end
@@ -199,9 +252,8 @@ local function smoothMoveTo(targetCFrame, moveSpeed)
     return true
 end
 
--- 取得特定區域周圍（200 studs 內）的蛋，避免跑去別區
 local function getGarbageEggModelsNear(areaCenter, maxDistance)
-    maxDistance = maxDistance or 200 -- 搜尋範圍半徑
+    maxDistance = maxDistance or 200
     local eggSlots = workspace:FindFirstChild("AreaEggSlotsClient")
     if not eggSlots or not areaCenter then return {} end
 
@@ -231,7 +283,6 @@ local function getTargetBaseCFrame()
     return nil
 end
 
--- Auto Steal 核心迴圈
 local function startAutoSteal()
     if autoStealThread then
         task.cancel(autoStealThread)
@@ -243,14 +294,11 @@ local function startAutoSteal()
             local areaPos = AreaLocations[selectedArea]
             
             if areaPos then
-                -- 1. 平滑移動至指定的區域
                 local arrivedArea = smoothMoveTo(CFrame.new(areaPos), smoothSpeed)
 
                 if arrivedArea and autoStealEnabled then
-                    -- 2. 停頓 0.5 秒
                     task.wait(0.5)
 
-                    -- 3. 嚴格限定：只尋找該區域半徑 200 studs 內的蛋
                     local eggs = getGarbageEggModelsNear(areaPos, 200)
                     
                     if #eggs > 0 then
@@ -259,7 +307,6 @@ local function startAutoSteal()
                         local targetCF = getModelCFrame(targetEgg)
 
                         if targetCF and AskFieldEggCarry then
-                            -- 移動至該區域內的目標蛋
                             smoothMoveTo(targetCF * CFrame.new(0, 1, 0), smoothSpeed)
 
                             local successCarry = false
@@ -282,7 +329,6 @@ local function startAutoSteal()
                         end
                     end
 
-                    -- 4. 拿完蛋後返回基地 (Base 8)
                     local baseCF = getTargetBaseCFrame()
                     if baseCF and autoStealEnabled then
                         smoothMoveTo(baseCF * CFrame.new(0, 3, 0), smoothSpeed)
@@ -304,13 +350,12 @@ local MainTab = Window:Tab({ Title = "Anti-Cheat Bypass", Icon = "shield-alert" 
 
 MainTab:Section({ Title = "Automation & Farm" })
 
--- 區域選擇 Dropdown
 MainTab:Dropdown({
     Title = "Select Area",
     Desc = "Choose target area to travel before searching eggs.",
     Values = {
         "Forest", "Lake", "Desert", "Jungle", "Snow",
-        "Volcano", "Abyss Ocean", "Prehistoric", "Cosmic", "Cherry Blossom"
+        "Volcano", "Abyss Ocean", "Prehistoric", "Cosmic", "Cherry Blossom", "Titan Temple"
     },
     Value = "Forest",
     Callback = function(Option)
@@ -328,7 +373,6 @@ MainTab:Dropdown({
     end,
 })
 
--- Auto Steal 開關
 MainTab:Toggle({
     Title = "Auto Steal Egg",
     Desc = "Moves to selected area, pauses, triggers remote, and returns to Base 8.",
@@ -350,7 +394,6 @@ MainTab:Toggle({
     end,
 })
 
--- Smooth Speed 滑桿
 MainTab:Slider({
     Title = "Smooth Movement Speed",
     Desc = "Adjusts the Tween speed when traveling.",
@@ -377,11 +420,13 @@ MainTab:Toggle({
     Value = false,
     Callback = function(Value)
         acBypassEnabled = Value
-        setupAntiCheatBypass(Value)
+        if Value and LocalPlayer.Character then
+            setupAntiCheatBypass(LocalPlayer.Character)
+        end
         
         WindUI:Notify({
             Title = "Anti-Cheat",
-            Content = Value and "Humanoid replaced, bypass active." or "Bypass disabled.",
+            Content = Value and "Humanoid replaced, bypass active." or "Bypass toggle updated.",
             Duration = 3
         })
     end,
@@ -419,11 +464,35 @@ MainTab:Button({
     end,
 })
 
+--------------------------------------------------
 -- Tab 2: Local Player
+--------------------------------------------------
 local PlayerTab = Window:Tab({ Title = "Local Player", Icon = "user" })
 
 PlayerTab:Section({ Title = "Humanoid Settings" })
 
+-- Speed 輸入框
+PlayerTab:Input({
+    Title = "WalkSpeed",
+    Desc = "Enter speed value (e.g., 50, 100).",
+    Value = "16",
+    Placeholder = "Enter speed...",
+    Callback = function(text)
+        local num = tonumber(text)
+        if num then
+            customPlayerSpeed = num
+            if not speedChangerEnabled then
+                local char = LocalPlayer.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.WalkSpeed = num
+                end
+            end
+        end
+    end,
+})
+
+-- HipHeight 滑桿
 PlayerTab:Slider({
     Title = "HipHeight",
     Desc = "Adjusts your character's height off the ground.",
@@ -442,11 +511,6 @@ PlayerTab:Slider({
     end,
 })
 
-WindUI:Notify({
-    Title = "Shard Hub Loaded",
-    Content = "Anti-Cheat, Auto Steal & Custom Speed Controls Ready.",
-    Duration = 4
-})
 --------------------------------------------------
 -- Tab 3: Auto
 --------------------------------------------------
@@ -466,10 +530,6 @@ local autoEquipBestEnabled = false
 local autoClaimIndexThread = nil
 local autoEquipBestThread = nil
 
---------------------------------------------------
--- Remote Functions
---------------------------------------------------
-
 local AskRedeemAll
 local WearBest
 
@@ -481,10 +541,6 @@ pcall(function()
     AskRedeemAll = Networking:WaitForChild("RF/Codex/AskRedeemAll", 5)
     WearBest = Networking:WaitForChild("RF/Haul/WearBest", 5)
 end)
-
---------------------------------------------------
--- Automation Threads
---------------------------------------------------
 
 local function startAutoClaimIndex()
     if autoClaimIndexThread then
@@ -522,10 +578,6 @@ local function startAutoEquipBest()
     end)
 end
 
---------------------------------------------------
--- Toggles
---------------------------------------------------
-
 AutoTab:Toggle({
     Title = "Auto Claim Index Reward",
     Desc = "Automatically redeems all available index rewards.",
@@ -554,4 +606,10 @@ AutoTab:Toggle({
             autoEquipBestThread = nil
         end
     end,
+})
+
+WindUI:Notify({
+    Title = "Shard Hub Loaded",
+    Content = "Anti-Cheat, Auto Steal & Custom Speed Controls Ready.",
+    Duration = 4
 })
