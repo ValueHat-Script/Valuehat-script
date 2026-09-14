@@ -1,0 +1,143 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Player = Players.LocalPlayer
+
+local UIModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/ValueHat-Script/Valuehat-script/refs/heads/main/ValueHatGui4.lua"))()
+local Hub = UIModule.CreateWindow("Steal a Brainrot Egg", "TikTok: ValueHat")
+
+local Config = {
+	AutoEgg = false,
+	AutoEquipBest = false,
+	SelectedZone = "All",
+	SelectedTPZone = "Zone1",
+	Delay = 0.4,
+}
+
+local function GetRoot()
+	local char = Player.Character
+	return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetReturnCFrame(fallbackCFrame)
+	local map = Workspace:FindFirstChild("Map")
+	if map then
+		local baseplate = map:FindFirstChild("Baseplate")
+		if baseplate and baseplate:IsA("BasePart") then
+			return baseplate.CFrame * CFrame.new(0, 5, 0)
+		end
+	end
+	return fallbackCFrame
+end
+
+local function FirePrompt(prompt)
+	if typeof(fireproximityprompt) == "function" then
+		fireproximityprompt(prompt)
+	else
+		prompt:InputHoldBegin()
+		task.wait(prompt.HoldDuration)
+		prompt:InputHoldEnd()
+	end
+end
+
+local function AutoEggSteal()
+	while Config.AutoEgg do
+		local root = GetRoot()
+		local eggsFolder = Workspace:FindFirstChild("Eggs")
+
+		if root and eggsFolder then
+			local originalPos = root.CFrame
+
+			local zonesToScan = {}
+			if Config.SelectedZone == "All" then
+				zonesToScan = eggsFolder:GetChildren()
+			else
+				local targetZone = eggsFolder:FindFirstChild(Config.SelectedZone)
+				if targetZone then
+					table.insert(zonesToScan, targetZone)
+				end
+			end
+
+			for _, zone in ipairs(zonesToScan) do
+				if not Config.AutoEgg then break end
+
+				for _, descendant in ipairs(zone:GetDescendants()) do
+					if not Config.AutoEgg then break end
+
+					if descendant:IsA("ProximityPrompt") and descendant.Enabled then
+						local attachment = descendant.Parent
+						if attachment and attachment:IsA("Attachment") then
+							root.CFrame = attachment.WorldCFrame
+							task.wait(Config.Delay)
+
+							FirePrompt(descendant)
+							task.wait(Config.Delay)
+
+							local returnCF = GetReturnCFrame(originalPos)
+							if returnCF then
+								root.CFrame = returnCF
+							end
+							task.wait(Config.Delay)
+						end
+					end
+				end
+			end
+		end
+		task.wait(0.5)
+	end
+end
+
+local function AutoEquipBestPets()
+	while Config.AutoEquipBest do
+		local events = ReplicatedStorage:FindFirstChild("Events")
+		if events then
+			local equipBestEvent = events:FindFirstChild("EquipBestPets")
+			if equipBestEvent and equipBestEvent:IsA("RemoteEvent") then
+				equipBestEvent:FireServer()
+			end
+		end
+		task.wait(1)
+	end
+end
+
+local function TeleportToZone(zoneName)
+	local root = GetRoot()
+	local eggsFolder = Workspace:FindFirstChild("Eggs")
+	if not root or not eggsFolder then return end
+
+	local targetZone = eggsFolder:FindFirstChild(zoneName)
+	if targetZone then
+		local targetPart = targetZone:FindFirstChildWhichIsA("BasePart", true)
+		if targetPart then
+			root.CFrame = targetPart.CFrame * CFrame.new(0, 5, 0)
+		end
+	end
+end
+
+-- UI 控制元件（已移除 Auto Upgrade 項目）
+Hub:CreateDropdown("Select Zone", {"All", "Zone1", "Zone2", "Zone3", "Zone4", "Zone5", "Zone6", "Zone7", "Zone8", "Zone9"}, "All", function(selected)
+	Config.SelectedZone = selected
+end)
+
+Hub:CreateToggle("Auto Steal Egg", false, function(isOn)
+	Config.AutoEgg = isOn
+	if isOn then
+		task.spawn(AutoEggSteal)
+	end
+end)
+
+Hub:CreateDropdown("Select TP Zone", {"Zone1", "Zone2", "Zone3", "Zone4", "Zone5", "Zone6", "Zone7", "Zone8", "Zone9"}, "Zone1", function(selected)
+	Config.SelectedTPZone = selected
+end)
+
+Hub:CreateButton("Teleport to Selected Zone", function()
+	TeleportToZone(Config.SelectedTPZone)
+end)
+
+Hub:CreateToggle("Auto Equip Best", false, function(isOn)
+	Config.AutoEquipBest = isOn
+	if isOn then
+		task.spawn(AutoEquipBestPets)
+	end
+end)
