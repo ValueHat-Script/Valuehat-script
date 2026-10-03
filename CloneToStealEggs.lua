@@ -442,9 +442,9 @@ end
 
 -- ==================== UI ====================
 
-local Hub = UIModule.CreateWindow("Speed", "TikTok: ValueHat")
+local Hub = UIModule.CreateWindow("Clone to steal eggs", "TikTok: ValueHat")
 
-Hub:CreateDropdown("Clone To Steal eggs", areaList, selectedArea, function(v)
+Hub:CreateDropdown("Select Area", areaList, selectedArea, function(v)
     selectedArea = v
 end)
 
