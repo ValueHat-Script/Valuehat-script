@@ -43,7 +43,7 @@ local function findZoneByNumber(num)
 end
 
 local zoneList = {}
-for i = 1, 11 do
+for i = 1, 12 do
     table.insert(zoneList, tostring(i))
 end
 
@@ -319,7 +319,7 @@ end
 
 -- ==================== UI ====================
 
-local Hub = UIModule.CreateWindow("Steal Animal Egg", "TikTok: ValueHat")
+local Hub = UIModule.CreateWindow("Steal Animal egg", "TikTok: ValueHat")
 
 Hub:CreateDropdown("Select Zone", zoneList, selectedZone, function(v)
     selectedZone = v
