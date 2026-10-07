@@ -134,6 +134,27 @@ local function getMyPlotFloor()
     return nil
 end
 
+-- 單次極速觸發 ProximityPrompt
+local function quickFirePrompt(prompt)
+    if not prompt then return false end
+
+    pcall(function()
+        prompt.Enabled = true
+        prompt.MaxActivationDistance = 999
+        prompt.HoldDuration = 0
+        prompt.RequiresLineOfSight = false
+    end)
+
+    local ok = false
+    pcall(function()
+        fireproximityprompt(prompt)
+        ok = true
+    end)
+
+    return ok
+end
+
+-- 通用 Prompt 觸發 (含開箱備用)
 local function forceFirePrompt(prompt)
     if not prompt then return false end
 
@@ -149,25 +170,8 @@ local function forceFirePrompt(prompt)
         prompt.RequiresLineOfSight = false
     end)
 
-    local ok = false
-
     pcall(function()
         fireproximityprompt(prompt)
-        ok = true
-    end)
-    task.wait(0.05)
-
-    pcall(function()
-        fireproximityprompt(prompt, 1)
-        ok = true
-    end)
-    task.wait(0.05)
-
-    pcall(function()
-        ProximityPromptService:InputHoldBegin(prompt)
-        task.wait(0.2)
-        ProximityPromptService:InputHoldEnd(prompt)
-        ok = true
     end)
 
     pcall(function()
@@ -177,7 +181,7 @@ local function forceFirePrompt(prompt)
         prompt.RequiresLineOfSight = oldRequires
     end)
 
-    return ok
+    return true
 end
 
 -- ==================== Equip Best 相關邏輯 ====================
@@ -311,7 +315,7 @@ local function startAutoPlace()
     end)
 end
 
--- ==================== Auto Crate 相關邏輯 ====================
+-- ==================== Auto Crate 相關邏輯 (觸發即返回) ====================
 
 local function getZoneFromName(name)
     local parts = string.split(name, "_")
@@ -372,80 +376,6 @@ local function getZoneCrates(zoneName)
     return list
 end
 
-local function findPromptsInModel(model)
-    local prompts = {}
-    local seen = {}
-    if not model then return prompts end
-
-    pcall(function()
-        for _, d in ipairs(model:GetDescendants()) do
-            if d:IsA("ProximityPrompt") and not seen[d] then
-                seen[d] = true
-                table.insert(prompts, d)
-            end
-        end
-    end)
-
-    return prompts
-end
-
-local function findNearbyPrompts(originPos, range)
-    local prompts = {}
-    range = range or 15
-
-    pcall(function()
-        for _, p in ipairs(workspace:GetDescendants()) do
-            if p:IsA("ProximityPrompt") then
-                local parent = p.Parent
-                local pos = nil
-
-                if parent then
-                    if parent:IsA("Attachment") then
-                        pos = parent.WorldPosition
-                    elseif parent:IsA("BasePart") then
-                        pos = parent.Position
-                    else
-                        local cf = getCFrame(parent)
-                        if cf then pos = cf.Position end
-                    end
-                end
-
-                if pos and (pos - originPos).Magnitude <= range then
-                    table.insert(prompts, p)
-                end
-            end
-        end
-    end)
-
-    return prompts
-end
-
-local function collectPrompts(crate, originPos)
-    local prompts = {}
-    local seen = {}
-
-    local function add(list)
-        for _, p in ipairs(list) do
-            if not seen[p] then
-                seen[p] = true
-                table.insert(prompts, p)
-            end
-        end
-    end
-
-    for i = 1, 5 do
-        add(findPromptsInModel(crate))
-        add(findNearbyPrompts(originPos, 15))
-
-        if #prompts > 0 then
-            break
-        end
-        task.wait(0.25)
-    end
-
-    return prompts
-end
-
 task.spawn(function()
     task.wait(1)
     pcall(function()
@@ -468,43 +398,53 @@ local function startAutoCrate()
                     local cf = getCFrame(crate)
 
                     if cf then
+                        -- 1. 飛過去箱子
                         teleportTo(cf * CFrame.new(0, 2, 0))
-                        task.wait(0.4)
+                        task.wait(0.15)
 
-                        local originPos = cf.Position
-                        local character = LocalPlayer.Character
-                        local root = character and character:FindFirstChild("HumanoidRootPart")
-                        if root then
-                            originPos = root.Position
-                        end
-
-                        local prompts = collectPrompts(crate, originPos)
-
-                        if #prompts > 0 then
-                            for _, prompt in ipairs(prompts) do
-                                forceFirePrompt(prompt)
-                                task.wait(0.2)
+                        -- 2. 尋找並馬上觸發 Prompt
+                        local promptFound = nil
+                        for _, desc in ipairs(crate:GetDescendants()) do
+                            if desc:IsA("ProximityPrompt") then
+                                promptFound = desc
+                                break
                             end
                         end
-                        task.wait(0.4)
 
-                        -- 傳送回安全的 Lobby 位置
+                        -- 若箱子內找不到，掃描附近區域
+                        if not promptFound then
+                            local originPos = cf.Position
+                            for _, p in ipairs(workspace:GetDescendants()) do
+                                if p:IsA("ProximityPrompt") and p.Parent then
+                                    local parentPos = getCFrame(p.Parent)
+                                    if parentPos and (parentPos.Position - originPos).Magnitude <= 15 then
+                                        promptFound = p
+                                        break
+                                    end
+                                end
+                            end
+                        end
+
+                        -- 3. 只要觸發完畢，馬上傳送回 Safe Zone
+                        if promptFound then
+                            quickFirePrompt(promptFound)
+                        end
+
                         local retCF = getSafeZoneCFrame()
                         if retCF then
                             teleportTo(retCF)
                         end
-                        task.wait(0.4)
                     end
                 else
-                    task.wait(2)
+                    task.wait(1.5)
                 end
             end)
 
             if not ok then
-                task.wait(1)
+                task.wait(0.5)
             end
 
-            task.wait(0.5)
+            task.wait(0.2)
         end
     end)
 end
@@ -558,4 +498,4 @@ Hub:CreateToggle("Equip Best", false, function(on)
     end
 end)
 
-print("[ValueHat] Script loaded OK with Equip Best & SafeZone Target Updated")
+print("[ValueHat] Script loaded OK - Auto Crate instant return active!")
