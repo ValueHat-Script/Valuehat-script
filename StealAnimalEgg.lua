@@ -4,6 +4,8 @@ local UIModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Valu
 -- 服務
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- 變數
@@ -14,13 +16,77 @@ local equipBestEnabled = false
 local upgradePenEnabled = false
 local upgradeTableEnabled = false
 
--- 即時傳送
-local function teleportTo(cframe)
+local TWEEN_SPEED = 100 -- Tween 移動速度 (Studs/秒)
+
+-- 使用 Tween 讓角色平滑移動
+local function tweenMoveTo(targetCFrame)
     local character = LocalPlayer.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.CFrame = cframe
+    if not character then return end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local distance = (root.Position - targetCFrame.Position).Magnitude
+    local duration = distance / TWEEN_SPEED
+
+    if duration <= 0 then
+        root.CFrame = targetCFrame
+        return
     end
+
+    local tweenInfo = TweenInfo.new(
+        duration,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.Out
+    )
+
+    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
+    
+    local bv = Instance.new("BodyVelocity")
+    bv.Velocity = Vector3.zero
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Parent = root
+
+    tween:Play()
+    tween.Completed:Wait()
+
+    bv:Destroy()
+end
+
+-- 強制開啟 Noclip 並用 Tween 往下拉 10 格
+local function pullDownTenStuds()
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    -- 開啟持續 Noclip 連線，防止遊戲引擎自動恢復碰撞
+    local noclipConnection
+    noclipConnection = RunService.Stepped:Connect(function()
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        else
+            noclipConnection:Disconnect()
+        end
+    end)
+
+    -- 計算下方 10 格的位置
+    local targetCF = root.CFrame * CFrame.new(0, -10, 0)
+    
+    -- 用 Tween 強制平移穿牆往下掉
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCF})
+    
+    tween:Play()
+    tween.Completed:Wait()
+
+    -- 斷開 Noclip 連線
+    noclipConnection:Disconnect()
 end
 
 -- ==================== Zone / Auto Egg ====================
@@ -45,23 +111,6 @@ end
 local zoneList = {}
 for i = 1, 12 do
     table.insert(zoneList, tostring(i))
-end
-
-local function getReturnCFrame()
-    local safeZone = workspace:FindFirstChild("SafeZone")
-    if not safeZone then return nil end
-
-    if safeZone:IsA("BasePart") then
-        return safeZone.CFrame
-    elseif safeZone:IsA("Model") then
-        return safeZone:GetPivot()
-    end
-
-    local part = safeZone:FindFirstChildWhichIsA("BasePart", true)
-    if part then
-        return part.CFrame
-    end
-    return nil
 end
 
 local function getCFrame(obj)
@@ -335,28 +384,30 @@ local function startAutoEgg()
                 local cf = getCFrame(eggModel)
 
                 if cf then
-                    teleportTo(cf * CFrame.new(0, 4, 0))
-                    task.wait(0.35)
+                    -- 1. Tween 平滑移動至蛋上方
+                    tweenMoveTo(cf * CFrame.new(0, 4, 0))
+                    task.wait(0.1)
 
+                    -- 2. 搜尋並觸發 ProximityPrompt
                     local prompt = waitForPrompt(eggModel)
 
                     if prompt and autoEggEnabled then
                         firePromptHold(prompt)
-                        task.wait(0.3)
-                    end
+                        task.wait(0.1)
 
-                    local ret = getReturnCFrame()
-                    if ret then
-                        teleportTo(ret * CFrame.new(0, 3, 0))
+                        -- 3. 拿到蛋後：持續 Noclip 並用 Tween 將角色強行拉下 10 格
+                        pullDownTenStuds()
+
+                        -- 4. 停頓 3 秒後繼續下一輪
+                        task.wait(3)
                     end
-                    task.wait(0.4)
                 end
             else
                 warn("[Auto Egg] Zone" .. selectedZone .. " 找不到 Egg Model")
                 task.wait(2)
             end
 
-            task.wait(0.6)
+            task.wait(0.2)
         end
     end)
 end
