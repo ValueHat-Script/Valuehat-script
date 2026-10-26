@@ -155,8 +155,7 @@ function UIModule.CreateWindow(titleText, footerText)
 
     local UIList = Instance.new("UIListLayout")
     UIList.Parent = Content
-    -- 增大元件之間的間距從 6 改為 8，避免視覺太擠
-    UIList.Padding = UDim.new(0, 8)
+    UIList.Padding = UDim.new(0, 6)
     UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
     self.UIList = UIList
 
@@ -230,15 +229,8 @@ function UIModule.CreateWindow(titleText, footerText)
 
     UIS.InputChanged:Connect(function(input)
         if input == dragInput and dragToggle then
-            local delta = input.Position - startPos -- 修正拖曳 delta 計算
-            -- 這裡還原原本正確的 delta 邏輯
-        end
-    end)
-    
-    -- 確保拖曳順暢
-    Main.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 
@@ -277,11 +269,10 @@ function UIModule:Clear()
     self.UpdateSize()
 end
 
--- --- 修正所有控制項的高度，改用固定高度取代 AutomaticSize，避免計算錯誤造成重疊 ---
-
 function UIModule:CreateButton(txt, cb, maxFontSize)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.92, 0, 0, 36) -- 固定高度 36，確保框與框大小一致
+    btn.Size = UDim2.new(0.92, 0, 0, 32)
+    btn.AutomaticSize = Enum.AutomaticSize.Y
     btn.BackgroundColor3 = C.glass
     btn.BackgroundTransparency = 0.12
     btn.Text = txt
@@ -314,7 +305,8 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     local state = defaultState or false
     
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.92, 0, 0, 36) -- 固定高度 36
+    btn.Size = UDim2.new(0.92, 0, 0, 32)
+    btn.AutomaticSize = Enum.AutomaticSize.Y
     btn.BackgroundColor3 = C.glass
     btn.BackgroundTransparency = 0.12
     btn.Text = ""
@@ -363,13 +355,15 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     return btn
 end
 
+-- --- 修正後的滑桿 (:CreateSlider) ---
 function UIModule:CreateSlider(txt, min, max, default, cb)
     min = min or 0
     max = max or 100
     default = math.clamp(default or min, min, max)
 
+    -- 將滑桿框高度稍微加高 (從 36 改為 46)，讓空間更充裕
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0.92, 0, 0, 46) -- 固定高度 46
+    frame.Size = UDim2.new(0.92, 0, 0, 46)
     frame.BackgroundColor3 = C.glass
     frame.BackgroundTransparency = 0.12
     frame.Parent = self.Content
@@ -378,6 +372,7 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
     applyGradient(frame, C.glassTop, C.glass, 90)
     applyStroke(frame, Color3.fromRGB(60, 110, 180), 1, 0.55)
 
+    -- 標題文字 (靠左)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.65, 0, 0, 18)
     label.Position = UDim2.new(0, 8, 0, 6)
@@ -389,6 +384,7 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
     label.Parent = frame
     applyTextSettings(label, 8, 14)
 
+    -- 數值顯示 (靠右)
     local valLabel = Instance.new("TextLabel")
     valLabel.Size = UDim2.new(0.3, 0, 0, 18)
     valLabel.Position = UDim2.new(0.7, -8, 0, 6)
@@ -400,6 +396,7 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
     valLabel.Parent = frame
     applyTextSettings(valLabel, 8, 14)
 
+    -- 進度條軌道 (位置下移，與文字保持距離)
     local track = Instance.new("Frame")
     track.Size = UDim2.new(1, -16, 0, 6)
     track.Position = UDim2.new(0, 8, 0, 30)
@@ -456,7 +453,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
     local isOpen = false
 
     local dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Size = UDim2.new(0.92, 0, 0, 36) -- 預設固定高度 36
+    dropdownFrame.Size = UDim2.new(0.92, 0, 0, 32)
     dropdownFrame.BackgroundColor3 = C.glass
     dropdownFrame.BackgroundTransparency = 0.12
     dropdownFrame.ClipsDescendants = true
@@ -467,7 +464,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
     applyStroke(dropdownFrame, Color3.fromRGB(60, 110, 180), 1, 0.55)
 
     local mainBtn = Instance.new("TextButton")
-    mainBtn.Size = UDim2.new(1, -28, 0, 36)
+    mainBtn.Size = UDim2.new(1, -28, 0, 32)
     mainBtn.Position = UDim2.new(0, 6, 0, 0)
     mainBtn.BackgroundTransparency = 1
     mainBtn.Text = txt .. ": " .. tostring(selected)
@@ -478,7 +475,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
     applyTextSettings(mainBtn, 8, 15)
 
     local arrow = Instance.new("TextLabel")
-    arrow.Size = UDim2.new(0, 24, 0, 36)
+    arrow.Size = UDim2.new(0, 24, 0, 32)
     arrow.Position = UDim2.new(1, -24, 0, 0)
     arrow.BackgroundTransparency = 1
     arrow.Text = "▼"
@@ -489,7 +486,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
 
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, -12, 0, 0)
-    container.Position = UDim2.new(0, 6, 0, 38)
+    container.Position = UDim2.new(0, 6, 0, 32)
     container.BackgroundTransparency = 1
     container.Parent = dropdownFrame
 
@@ -502,10 +499,10 @@ function UIModule:CreateDropdown(txt, options, default, cb)
         arrow.Text = isOpen and "▲" or "▼"
         
         if isOpen then
-            local totalHeight = listLayout.AbsoluteContentSize.Y + 44
+            local totalHeight = listLayout.AbsoluteContentSize.Y + 38
             dropdownFrame.Size = UDim2.new(0.92, 0, 0, totalHeight)
         else
-            dropdownFrame.Size = UDim2.new(0.92, 0, 0, 36)
+            dropdownFrame.Size = UDim2.new(0.92, 0, 0, 32)
         end
         self.UpdateSize()
     end
@@ -514,7 +511,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
 
     for _, optionText in ipairs(options) do
         local optBtn = Instance.new("TextButton")
-        optBtn.Size = UDim2.new(1, 0, 0, 26)
+        optBtn.Size = UDim2.new(1, 0, 0, 24)
         optBtn.BackgroundColor3 = C.card
         optBtn.Text = optionText
         optBtn.TextColor3 = C.inkSoft
@@ -537,7 +534,7 @@ end
 
 function UIModule:CreateInput(txt, placeholder, cb)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0.92, 0, 0, 36) -- 固定高度 36
+    frame.Size = UDim2.new(0.92, 0, 0, 32)
     frame.BackgroundColor3 = C.glass
     frame.BackgroundTransparency = 0.12
     frame.Parent = self.Content
@@ -558,8 +555,8 @@ function UIModule:CreateInput(txt, placeholder, cb)
     applyTextSettings(label, 8, 14)
 
     local textBox = Instance.new("TextBox")
-    textBox.Size = UDim2.new(0.5, -8, 0, 24)
-    textBox.Position = UDim2.new(0.5, 0, 0.5, -12)
+    textBox.Size = UDim2.new(0.5, -8, 0, 22)
+    textBox.Position = UDim2.new(0.5, 0, 0.5, -11)
     textBox.BackgroundColor3 = C.card
     textBox.Text = ""
     textBox.PlaceholderText = placeholder or "輸入..."
