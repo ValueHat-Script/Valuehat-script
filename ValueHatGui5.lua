@@ -50,15 +50,15 @@ function UIModule.CreateWindow(titleText, footerText)
     UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = Main
 
-    -- --- GUI 外框發光藍光效果 ---
-    -- 外層發光暈 (Glow Effect)
+    -- --- 藍色發光外框風格 ---
+    -- 外層發光暈 (Glow Effect) - 藍色
     local GlowStroke = Instance.new("UIStroke")
     GlowStroke.Thickness = 5
     GlowStroke.Color = Color3.fromRGB(0, 150, 255)
     GlowStroke.Transparency = 0.4
     GlowStroke.Parent = Main
 
-    -- 內層主外框
+    -- 內層主外框 - 亮藍色
     local UIStroke = Instance.new("UIStroke")
     UIStroke.Thickness = 2
     UIStroke.Color = Color3.fromRGB(100, 210, 255)
