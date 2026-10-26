@@ -14,17 +14,53 @@ if oldGui then
     oldGui:Destroy()
 end
 
+-- 仿照圖片中的色系與工具函式
+local C = {
+    bgTop = Color3.fromRGB(50, 20, 55),
+    bgBot = Color3.fromRGB(14, 6, 22),
+    card = Color3.fromRGB(28, 18, 48),
+    glass = Color3.fromRGB(28, 18, 48),
+    glassTop = Color3.fromRGB(80, 40, 94),
+    accent = Color3.fromRGB(0, 150, 255),
+    strokeColor = Color3.fromRGB(60, 40, 90),
+}
+
+local function applyCorner(inst, r)
+    local u = Instance.new("UICorner")
+    u.CornerRadius = UDim.new(0, r or 8)
+    u.Parent = inst
+    return u
+end
+
+local function applyGradient(inst, c1, c2, rot)
+    local g = Instance.new("UIGradient")
+    g.Color = ColorSequence.new(c1, c2)
+    g.Rotation = rot or 90
+    g.Parent = inst
+    return g
+end
+
+local function applyStroke(inst, col, thick, trans)
+    local s = Instance.new("UIStroke")
+    s.Color = col or C.strokeColor
+    s.Thickness = thick or 1.5
+    s.Transparency = trans or 0
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = inst
+    return s
+end
+
 -- 通用工具：支援「TextScaled 自動縮放」+「TextWrapped 自動換行」
 local function applyTextSettings(textObject, minSize, maxSize)
     textObject.TextScaled = true
-    textObject.TextWrapped = true -- 支援自動換行
+    textObject.TextWrapped = true
     
     local oldConstraint = textObject:FindFirstChildOfClass("UITextSizeConstraint")
     if oldConstraint then oldConstraint:Destroy() end
 
     local constraint = Instance.new("UITextSizeConstraint")
     constraint.MinTextSize = minSize or 8
-    constraint.MaxTextSize = maxSize or 16 -- 提高上限，讓字體能放大
+    constraint.MaxTextSize = maxSize or 16
     constraint.Parent = textObject
 end
 
@@ -37,45 +73,18 @@ function UIModule.CreateWindow(titleText, footerText)
     ApexHub.Parent = CoreGui
     self.Gui = ApexHub
 
-    -- 主面板 (套用 Glass 效果：半透明背景)
+    -- 主面板 (套用圖片中的 Glass 漸層風格)
     local Main = Instance.new("Frame")
     Main.Parent = ApexHub
-    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    Main.BackgroundTransparency = 0.25 -- 半透明玻璃感
+    Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Main.BorderSizePixel = 0
     Main.Position = UDim2.new(0.5, -130, 0.5, -200)
     Main.Size = UDim2.new(0, 260, 0, 100)
     Main.Active = true
 
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 12)
-    UICorner.Parent = Main
-
-    -- 內嵌玻璃高光反光效果 (UIGradient 做出上方透光感)
-    local GlassHighlight = Instance.new("Frame")
-    GlassHighlight.Size = UDim2.new(1, 0, 0.5, 0)
-    GlassHighlight.BackgroundTransparency = 0.85
-    GlassHighlight.BorderSizePixel = 0
-    GlassHighlight.Parent = Main
-    
-    local HighlightCorner = Instance.new("UICorner")
-    HighlightCorner.CornerRadius = UDim.new(0, 12)
-    HighlightCorner.Parent = GlassHighlight
-
-    local HighlightGradient = Instance.new("UIGradient")
-    HighlightGradient.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    HighlightGradient.Rotation = 90
-    HighlightGradient.Parent = GlassHighlight
-
-    -- GUI 外框（深藍色 + 微微透光）
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Thickness = 2
-    UIStroke.Color = Color3.fromRGB(80, 150, 255) -- 亮藍色邊框更有精緻感
-    UIStroke.Transparency = 0.2
-    UIStroke.Parent = Main
+    applyCorner(Main, 10)
+    applyGradient(Main, C.glassTop, C.glass, 90) -- 垂直漸層玻璃感
+    applyStroke(Main, Color3.fromRGB(100, 70, 140), 1.5, 0)
 
     -- 標題文字
     local Title = Instance.new("TextLabel")
@@ -88,9 +97,7 @@ function UIModule.CreateWindow(titleText, footerText)
     Title.BackgroundTransparency = 1
     Title.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- 標題放大範圍：10pt ~ 20pt
     applyTextSettings(Title, 10, 20)
-
     self.TitleLabel = Title
 
     local TitleStroke = Instance.new("UIStroke")
@@ -131,15 +138,8 @@ function UIModule.CreateWindow(titleText, footerText)
     MinBtn.TextSize = 16
     MinBtn.Parent = Main
 
-    local MinBtnCorner = Instance.new("UICorner")
-    MinBtnCorner.CornerRadius = UDim.new(0, 5)
-    MinBtnCorner.Parent = MinBtn
-
-    local MinBtnStroke = Instance.new("UIStroke")
-    MinBtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-    MinBtnStroke.Thickness = 1.5
-    MinBtnStroke.Color = Color3.fromRGB(0, 0, 0)
-    MinBtnStroke.Parent = MinBtn
+    applyCorner(MinBtn, 5)
+    applyStroke(MinBtn, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     -- 自動調整高度邏輯
     local TITLE_PADDING = 52
@@ -242,11 +242,15 @@ function UIModule:CreateButton(txt, cb, maxFontSize)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 32)
     btn.AutomaticSize = Enum.AutomaticSize.Y
-    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = txt
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.FredokaOne
     btn.Parent = self.Content
+
+    applyCorner(btn, 6)
+    applyGradient(btn, C.glassTop, C.glass, 90)
+    applyStroke(btn, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local UIPadding = Instance.new("UIPadding")
     UIPadding.PaddingLeft = UDim.new(0, 8)
@@ -256,16 +260,6 @@ function UIModule:CreateButton(txt, cb, maxFontSize)
     UIPadding.Parent = btn
 
     applyTextSettings(btn, 8, maxFontSize or 16)
-    
-    local BtnStroke = Instance.new("UIStroke")
-    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-    BtnStroke.Thickness = 1.5
-    BtnStroke.Color = Color3.fromRGB(0, 0, 0)
-    BtnStroke.Parent = btn
-    
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 6)
-    c.Parent = btn
     
     btn.MouseButton1Click:Connect(function()
         if cb then cb(btn) end
@@ -282,19 +276,13 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 32)
     btn.AutomaticSize = Enum.AutomaticSize.Y
-    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = ""
     btn.Parent = self.Content
     
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 6)
-    c.Parent = btn
-    
-    local BtnStroke = Instance.new("UIStroke")
-    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-    BtnStroke.Thickness = 1.5
-    BtnStroke.Color = Color3.fromRGB(0, 0, 0)
-    BtnStroke.Parent = btn
+    applyCorner(btn, 6)
+    applyGradient(btn, C.glassTop, C.glass, 90)
+    applyStroke(btn, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -38, 1, 0)
@@ -310,16 +298,11 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     local box = Instance.new("Frame")
     box.Size = UDim2.new(0, 18, 0, 18)
     box.Position = UDim2.new(1, -26, 0.5, -9)
+    box.Parent = box.Parent and box.Parent or btn
     box.Parent = btn
     
-    local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 4)
-    boxCorner.Parent = box
-    
-    local boxStroke = Instance.new("UIStroke")
-    boxStroke.Thickness = 1.5
-    boxStroke.Color = Color3.fromRGB(0, 0, 0)
-    boxStroke.Parent = box
+    applyCorner(box, 4)
+    applyStroke(box, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local function updateState()
         if state then
@@ -349,17 +332,12 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
 
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0.92, 0, 0, 36)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     frame.Parent = self.Content
 
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 6)
-    c.Parent = frame
-
-    local frameStroke = Instance.new("UIStroke")
-    frameStroke.Thickness = 1.5
-    frameStroke.Color = Color3.fromRGB(0, 0, 0)
-    frameStroke.Parent = frame
+    applyCorner(frame, 6)
+    applyGradient(frame, C.glassTop, C.glass, 90)
+    applyStroke(frame, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -16, 0, 18)
@@ -378,18 +356,14 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
     track.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     track.Parent = frame
 
-    local trackCorner = Instance.new("UICorner")
-    trackCorner.CornerRadius = UDim.new(0, 3)
-    trackCorner.Parent = track
+    applyCorner(track, 3)
 
     local fill = Instance.new("Frame")
     fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
     fill.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
     fill.Parent = track
 
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 3)
-    fillCorner.Parent = fill
+    applyCorner(fill, 3)
 
     local dragging = false
 
@@ -432,18 +406,13 @@ function UIModule:CreateDropdown(txt, options, default, cb)
 
     local dropdownFrame = Instance.new("Frame")
     dropdownFrame.Size = UDim2.new(0.92, 0, 0, 32)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     dropdownFrame.ClipsDescendants = true
     dropdownFrame.Parent = self.Content
 
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 6)
-    c.Parent = dropdownFrame
-
-    local mainStroke = Instance.new("UIStroke")
-    mainStroke.Thickness = 1.5
-    mainStroke.Color = Color3.fromRGB(0, 0, 0)
-    mainStroke.Parent = dropdownFrame
+    applyCorner(dropdownFrame, 6)
+    applyGradient(dropdownFrame, C.glassTop, C.glass, 90)
+    applyStroke(dropdownFrame, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local mainBtn = Instance.new("TextButton")
     mainBtn.Size = UDim2.new(1, -28, 0, 32)
@@ -500,10 +469,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
         optBtn.Font = Enum.Font.FredokaOne
         optBtn.Parent = container
         applyTextSettings(optBtn, 8, 14)
-
-        local optCorner = Instance.new("UICorner")
-        optCorner.CornerRadius = UDim.new(0, 4)
-        optCorner.Parent = optBtn
+        applyCorner(optBtn, 4)
 
         optBtn.MouseButton1Click:Connect(function()
             selected = optionText
@@ -521,17 +487,12 @@ end
 function UIModule:CreateInput(txt, placeholder, cb)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0.92, 0, 0, 32)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     frame.Parent = self.Content
 
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 6)
-    c.Parent = frame
-
-    local frameStroke = Instance.new("UIStroke")
-    frameStroke.Thickness = 1.5
-    frameStroke.Color = Color3.fromRGB(0, 0, 0)
-    frameStroke.Parent = frame
+    applyCorner(frame, 6)
+    applyGradient(frame, C.glassTop, C.glass, 90)
+    applyStroke(frame, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.45, 0, 1, 0)
@@ -557,14 +518,8 @@ function UIModule:CreateInput(txt, placeholder, cb)
     textBox.Parent = frame
     applyTextSettings(textBox, 8, 14)
 
-    local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 4)
-    boxCorner.Parent = textBox
-
-    local boxStroke = Instance.new("UIStroke")
-    boxStroke.Thickness = 1
-    boxStroke.Color = Color3.fromRGB(0, 0, 0)
-    boxStroke.Parent = textBox
+    applyCorner(textBox, 4)
+    applyStroke(textBox, Color3.fromRGB(0, 0, 0), 1, 0)
 
     textBox.FocusLost:Connect(function(enterPressed)
         if cb then
