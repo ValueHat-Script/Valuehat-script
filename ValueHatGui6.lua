@@ -56,7 +56,7 @@ end
 -- 通用工具：支援「TextScaled 自動縮放」+「TextWrapped 自動換行」
 local function applyTextSettings(textObject, minSize, maxSize)
     textObject.TextScaled = true
-    textObject.TextWrapped = true
+    textObject.TextWrapped = true -- 支援自動換行
     
     local oldConstraint = textObject:FindFirstChildOfClass("UITextSizeConstraint")
     if oldConstraint then oldConstraint:Destroy() end
@@ -117,6 +117,7 @@ function UIModule.CreateWindow(titleText, footerText)
     Main:GetPropertyChangedSignal("Size"):Connect(syncShadow)
     syncShadow()
 
+    -- 主面板背景漸層與發光外框
     applyGradient(Main, C.bgTop, C.bgBot, 90)
     applyStroke(Main, C.accent, 1.5, 0.35)
 
@@ -178,6 +179,7 @@ function UIModule.CreateWindow(titleText, footerText)
     applyCorner(MinBtn, 5)
     applyStroke(MinBtn, C.accent, 1, 0.6)
 
+    -- 自動調整高度邏輯
     local TITLE_PADDING = 52
     local MAX_HEIGHT = 350
 
@@ -194,6 +196,7 @@ function UIModule.CreateWindow(titleText, footerText)
     self.UpdateSize = updateMainSize
     UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateMainSize)
 
+    -- 縮小功能
     MinBtn.MouseButton1Click:Connect(function()
         isMinimized = not isMinimized
         if isMinimized then
@@ -207,6 +210,7 @@ function UIModule.CreateWindow(titleText, footerText)
         end
     end)
 
+    -- 拖曳邏輯
     local dragToggle, dragInput, dragStart, startPos
     Main.InputBegan:Connect(function(input)
         if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
@@ -234,6 +238,7 @@ function UIModule.CreateWindow(titleText, footerText)
         end
     end)
 
+    -- 頁尾標籤
     if footerText then
         local Footer = Instance.new("TextLabel")
         Footer.Size = UDim2.new(0.9, 0, 0, 20)
@@ -254,12 +259,14 @@ function UIModule.CreateWindow(titleText, footerText)
     return self
 end
 
+-- --- 2. 動態修改標題 (:SetTitle) ---
 function UIModule:SetTitle(newTitle)
     if self.TitleLabel then
         self.TitleLabel.Text = tostring(newTitle)
     end
 end
 
+-- --- 3. 清空內容 (:Clear) ---
 function UIModule:Clear()
     for _, child in ipairs(self.Content:GetChildren()) do
         if not child:IsA("UIListLayout") then
@@ -269,6 +276,7 @@ function UIModule:Clear()
     self.UpdateSize()
 end
 
+-- --- 4. 普通按鈕 (:CreateButton) ---
 function UIModule:CreateButton(txt, cb, maxFontSize)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 32)
@@ -301,6 +309,7 @@ function UIModule:CreateButton(txt, cb, maxFontSize)
     return btn
 end
 
+-- --- 5. 開關按鈕 (:CreateToggle) ---
 function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     local state = defaultState or false
     
@@ -355,15 +364,14 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     return btn
 end
 
--- --- 修正後的滑桿 (:CreateSlider) ---
+-- --- 6. 滑桿 (:CreateSlider) ---
 function UIModule:CreateSlider(txt, min, max, default, cb)
     min = min or 0
     max = max or 100
     default = math.clamp(default or min, min, max)
 
-    -- 將滑桿框高度稍微加高 (從 36 改為 46)，讓空間更充裕
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0.92, 0, 0, 46)
+    frame.Size = UDim2.new(0.92, 0, 0, 36)
     frame.BackgroundColor3 = C.glass
     frame.BackgroundTransparency = 0.12
     frame.Parent = self.Content
@@ -372,34 +380,20 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
     applyGradient(frame, C.glassTop, C.glass, 90)
     applyStroke(frame, Color3.fromRGB(60, 110, 180), 1, 0.55)
 
-    -- 標題文字 (靠左)
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.65, 0, 0, 18)
-    label.Position = UDim2.new(0, 8, 0, 6)
+    label.Size = UDim2.new(1, -16, 0, 18)
+    label.Position = UDim2.new(0, 8, 0, 2)
     label.BackgroundTransparency = 1
-    label.Text = txt
+    label.Text = txt .. ": " .. tostring(default)
     label.TextColor3 = C.ink
     label.Font = Enum.Font.FredokaOne
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
     applyTextSettings(label, 8, 14)
 
-    -- 數值顯示 (靠右)
-    local valLabel = Instance.new("TextLabel")
-    valLabel.Size = UDim2.new(0.3, 0, 0, 18)
-    valLabel.Position = UDim2.new(0.7, -8, 0, 6)
-    valLabel.BackgroundTransparency = 1
-    valLabel.Text = tostring(default)
-    valLabel.TextColor3 = C.accent2
-    valLabel.Font = Enum.Font.FredokaOne
-    valLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valLabel.Parent = frame
-    applyTextSettings(valLabel, 8, 14)
-
-    -- 進度條軌道 (位置下移，與文字保持距離)
     local track = Instance.new("Frame")
     track.Size = UDim2.new(1, -16, 0, 6)
-    track.Position = UDim2.new(0, 8, 0, 30)
+    track.Position = UDim2.new(0, 8, 0, 23)
     track.BackgroundColor3 = C.trackOff
     track.Parent = frame
 
@@ -420,7 +414,7 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
         local pos = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
         local val = math.floor(min + ((max - min) * pos))
         fill.Size = UDim2.new(pos, 0, 1, 0)
-        valLabel.Text = tostring(val)
+        label.Text = txt .. ": " .. tostring(val)
         if cb then cb(val) end
     end
 
@@ -447,6 +441,7 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
     return frame
 end
 
+-- --- 7. 下拉選單 (:CreateDropdown) ---
 function UIModule:CreateDropdown(txt, options, default, cb)
     options = options or {}
     local selected = default or (options[1] or "None")
@@ -532,6 +527,7 @@ function UIModule:CreateDropdown(txt, options, default, cb)
     return dropdownFrame
 end
 
+-- --- 8. 輸入框 (:CreateInput) ---
 function UIModule:CreateInput(txt, placeholder, cb)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0.92, 0, 0, 32)
@@ -580,6 +576,7 @@ function UIModule:CreateInput(txt, placeholder, cb)
     return frame
 end
 
+-- --- 9. 銷毀 UI (:Destroy) ---
 function UIModule:Destroy()
     if self.Gui then
         self.Gui:Destroy()
