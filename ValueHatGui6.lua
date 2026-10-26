@@ -14,7 +14,7 @@ if oldGui then
     oldGui:Destroy()
 end
 
--- 仿照圖片中的色系與工具函式
+-- 色系定義
 local C = {
     bgTop = Color3.fromRGB(50, 20, 55),
     bgBot = Color3.fromRGB(14, 6, 22),
@@ -22,7 +22,7 @@ local C = {
     glass = Color3.fromRGB(28, 18, 48),
     glassTop = Color3.fromRGB(80, 40, 94),
     accent = Color3.fromRGB(0, 150, 255),
-    strokeColor = Color3.fromRGB(60, 40, 90),
+    glowColor = Color3.fromRGB(130, 80, 255), -- 光暈發光顏色
 }
 
 local function applyCorner(inst, r)
@@ -32,18 +32,10 @@ local function applyCorner(inst, r)
     return u
 end
 
-local function applyGradient(inst, c1, c2, rot)
-    local g = Instance.new("UIGradient")
-    g.Color = ColorSequence.new(c1, c2)
-    g.Rotation = rot or 90
-    g.Parent = inst
-    return g
-end
-
 local function applyStroke(inst, col, thick, trans)
     local s = Instance.new("UIStroke")
-    s.Color = col or C.strokeColor
-    s.Thickness = thick or 1.5
+    s.Color = col or C.glowColor
+    s.Thickness = thick or 2
     s.Transparency = trans or 0
     s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     s.Parent = inst
@@ -73,18 +65,23 @@ function UIModule.CreateWindow(titleText, footerText)
     ApexHub.Parent = CoreGui
     self.Gui = ApexHub
 
-    -- 主面板 (套用圖片中的 Glass 漸層風格)
+    -- 主面板
     local Main = Instance.new("Frame")
     Main.Parent = ApexHub
-    Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Main.BackgroundColor3 = Color3.fromRGB(16, 12, 24)
+    Main.BackgroundTransparency = 0
     Main.BorderSizePixel = 0
     Main.Position = UDim2.new(0.5, -130, 0.5, -200)
     Main.Size = UDim2.new(0, 260, 0, 100)
     Main.Active = true
 
     applyCorner(Main, 10)
-    applyGradient(Main, C.glassTop, C.glass, 90) -- 垂直漸層玻璃感
-    applyStroke(Main, Color3.fromRGB(100, 70, 140), 1.5, 0)
+
+    -- --- 核心：建立外框發光（Glow）效果 ---
+    -- 透過多層不同厚度與透明度的 UIStroke 疊加，製造出向外暈開的光暈感
+    applyStroke(Main, Color3.fromRGB(130, 80, 255), 4, 0.6)  -- 外層大光暈 (模糊感)
+    applyStroke(Main, Color3.fromRGB(160, 100, 255), 3, 0.3) -- 中層光暈
+    applyStroke(Main, Color3.fromRGB(200, 150, 255), 1.5, 0) -- 內層亮邊框
 
     -- 標題文字
     local Title = Instance.new("TextLabel")
@@ -242,14 +239,13 @@ function UIModule:CreateButton(txt, cb, maxFontSize)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 32)
     btn.AutomaticSize = Enum.AutomaticSize.Y
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     btn.Text = txt
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.FredokaOne
     btn.Parent = self.Content
 
     applyCorner(btn, 6)
-    applyGradient(btn, C.glassTop, C.glass, 90)
     applyStroke(btn, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local UIPadding = Instance.new("UIPadding")
@@ -276,12 +272,11 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 32)
     btn.AutomaticSize = Enum.AutomaticSize.Y
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     btn.Text = ""
     btn.Parent = self.Content
     
     applyCorner(btn, 6)
-    applyGradient(btn, C.glassTop, C.glass, 90)
     applyStroke(btn, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local label = Instance.new("TextLabel")
@@ -298,7 +293,6 @@ function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
     local box = Instance.new("Frame")
     box.Size = UDim2.new(0, 18, 0, 18)
     box.Position = UDim2.new(1, -26, 0.5, -9)
-    box.Parent = box.Parent and box.Parent or btn
     box.Parent = btn
     
     applyCorner(box, 4)
@@ -332,11 +326,10 @@ function UIModule:CreateSlider(txt, min, max, default, cb)
 
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0.92, 0, 0, 36)
-    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     frame.Parent = self.Content
 
     applyCorner(frame, 6)
-    applyGradient(frame, C.glassTop, C.glass, 90)
     applyStroke(frame, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local label = Instance.new("TextLabel")
@@ -406,12 +399,11 @@ function UIModule:CreateDropdown(txt, options, default, cb)
 
     local dropdownFrame = Instance.new("Frame")
     dropdownFrame.Size = UDim2.new(0.92, 0, 0, 32)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     dropdownFrame.ClipsDescendants = true
     dropdownFrame.Parent = self.Content
 
     applyCorner(dropdownFrame, 6)
-    applyGradient(dropdownFrame, C.glassTop, C.glass, 90)
     applyStroke(dropdownFrame, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local mainBtn = Instance.new("TextButton")
@@ -487,11 +479,10 @@ end
 function UIModule:CreateInput(txt, placeholder, cb)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0.92, 0, 0, 32)
-    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     frame.Parent = self.Content
 
     applyCorner(frame, 6)
-    applyGradient(frame, C.glassTop, C.glass, 90)
     applyStroke(frame, Color3.fromRGB(0, 0, 0), 1.5, 0)
 
     local label = Instance.new("TextLabel")
