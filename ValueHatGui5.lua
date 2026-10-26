@@ -37,10 +37,11 @@ function UIModule.CreateWindow(titleText, footerText)
     ApexHub.Parent = CoreGui
     self.Gui = ApexHub
 
-    -- 主面板
+    -- 主面板 (套用 Glass 效果：半透明背景)
     local Main = Instance.new("Frame")
     Main.Parent = ApexHub
-    Main.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    Main.BackgroundTransparency = 0.25 -- 半透明玻璃感
     Main.BorderSizePixel = 0
     Main.Position = UDim2.new(0.5, -130, 0.5, -200)
     Main.Size = UDim2.new(0, 260, 0, 100)
@@ -50,20 +51,31 @@ function UIModule.CreateWindow(titleText, footerText)
     UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = Main
 
-    -- --- 藍色發光外框風格 ---
-    -- 外層發光暈 (Glow Effect) - 藍色
-    local GlowStroke = Instance.new("UIStroke")
-    GlowStroke.Thickness = 5
-    GlowStroke.Color = Color3.fromRGB(0, 150, 255)
-    GlowStroke.Transparency = 0.4
-    GlowStroke.Parent = Main
+    -- 內嵌玻璃高光反光效果 (UIGradient 做出上方透光感)
+    local GlassHighlight = Instance.new("Frame")
+    GlassHighlight.Size = UDim2.new(1, 0, 0.5, 0)
+    GlassHighlight.BackgroundTransparency = 0.85
+    GlassHighlight.BorderSizePixel = 0
+    GlassHighlight.Parent = Main
+    
+    local HighlightCorner = Instance.new("UICorner")
+    HighlightCorner.CornerRadius = UDim.new(0, 12)
+    HighlightCorner.Parent = GlassHighlight
 
-    -- 內層主外框 - 亮藍色
+    local HighlightGradient = Instance.new("UIGradient")
+    HighlightGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    HighlightGradient.Rotation = 90
+    HighlightGradient.Parent = GlassHighlight
+
+    -- GUI 外框（深藍色 + 微微透光）
     local UIStroke = Instance.new("UIStroke")
     UIStroke.Thickness = 2
-    UIStroke.Color = Color3.fromRGB(100, 210, 255)
+    UIStroke.Color = Color3.fromRGB(80, 150, 255) -- 亮藍色邊框更有精緻感
+    UIStroke.Transparency = 0.2
     UIStroke.Parent = Main
-    ----------------------------
 
     -- 標題文字
     local Title = Instance.new("TextLabel")
