@@ -37,13 +37,13 @@ function UIModule.CreateWindow(titleText, footerText)
     ApexHub.Parent = CoreGui
     self.Gui = ApexHub
 
-    -- 藍色外框光暈陰影 (參照第二個腳本的精美陰影設計)
+    -- 新增：參考第二個腳本的藍色光暈陰影 (ImageLabel)
     local Shadow = Instance.new("ImageLabel")
     Shadow.Name = "Shadow"
     Shadow.BackgroundTransparency = 1
     Shadow.Image = "rbxassetid://6014261993"
-    Shadow.ImageColor3 = Color3.fromRGB(0, 110, 255) -- 藍色光暈顏色
-    Shadow.ImageTransparency = 0.45
+    Shadow.ImageColor3 = Color3.fromRGB(120, 40, 190) -- 發光顏色（可自行調整）
+    Shadow.ImageTransparency = 0.5
     Shadow.ScaleType = Enum.ScaleType.Slice
     Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
     Shadow.ZIndex = 1
@@ -51,7 +51,6 @@ function UIModule.CreateWindow(titleText, footerText)
 
     -- 主面板
     local Main = Instance.new("Frame")
-    Main.Name = "Main"
     Main.Parent = ApexHub
     Main.ZIndex = 2
     Main.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
@@ -60,7 +59,7 @@ function UIModule.CreateWindow(titleText, footerText)
     Main.Size = UDim2.new(0, 260, 0, 100)
     Main.Active = true
 
-    -- 同步陰影位置與大小的函式
+    -- 新增：讓光暈跟隨主視窗大小與位置自動同步
     local function syncShadow()
         local p, s = Main.Position, Main.Size
         Shadow.Position = UDim2.new(p.X.Scale, p.X.Offset - 22, p.Y.Scale, p.Y.Offset - 18)
@@ -241,10 +240,11 @@ function UIModule:Clear()
 end
 
 -- --- 4. 普通按鈕 (:CreateButton) ---
+-- 可選擇性傳入 maxFontSize 參數 (預設 16pt，最小 8pt)
 function UIModule:CreateButton(txt, cb, maxFontSize)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.92, 0, 0, 32)
-    btn.AutomaticSize = Enum.AutomaticSize.Y
+    btn.AutomaticSize = Enum.AutomaticSize.Y -- 超過兩行自動拉高按鈕
     btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     btn.Text = txt
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -258,6 +258,7 @@ function UIModule:CreateButton(txt, cb, maxFontSize)
     UIPadding.PaddingBottom = UDim.new(0, 4)
     UIPadding.Parent = btn
 
+    -- 動態放大文字：8pt ~ 16pt (或傳入值)
     applyTextSettings(btn, 8, maxFontSize or 16)
     
     local BtnStroke = Instance.new("UIStroke")
