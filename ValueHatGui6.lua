@@ -543,4 +543,65 @@ local function createTechInput(name, titleText, placeholder, yPos, callback)
         callback(textBox.Text, enterPressed)
     end)
 end
+-- ==================== 🧩 配置所有元件與順序排列 ====================
+
+createTechButton("ActionBtn", "EXECUTE // 執行核心", 10, function()
+    print("[ValueHat] 核心程序已執行")
+end)
+
+local infJumpEnabled = false
+createTechToggle("InfJumpToggle", "TOGGLE // 無限跳躍", 46, function(enabled)
+    infJumpEnabled = enabled
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infJumpEnabled then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+createTechDropdown("ModeDropdown", "MODE // 模式選擇", {"Normal", "Fast", "Ultra", "God", "Extreme", "Custom"}, 82, function(selected)
+    print("[ValueHat] 選擇模式:", selected)
+end)
+
+createTechSlider("SpeedSlider", "SPEED // 移動速度", 16, 200, 50, 118, function(value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end
+end)
+
+createTechInput("TargetInput", "TARGET // 目標設定", "輸入目標名稱...", 164, function(text, entered)
+    print("[ValueHat] 輸入內容:", text, "是否按下了 Enter:", entered)
+end)
+
+-- 底部 TikTok 標籤外框容器
+local StatusContainer = Instance.new("Frame")
+StatusContainer.Parent = ContentContainer
+StatusContainer.BackgroundColor3 = Color3.fromRGB(14, 22, 40)
+StatusContainer.Position = UDim2.new(0.05, 0, 0, 215)
+StatusContainer.Size = UDim2.new(0.9, 0, 0, 22)
+StatusContainer.ZIndex = 2
+
+local scCorner = Instance.new("UICorner")
+scCorner.CornerRadius = UDim.new(0, 4)
+scCorner.Parent = StatusContainer
+
+local scStroke = Instance.new("UIStroke")
+scStroke.Parent = StatusContainer
+scStroke.Color = Color3.fromRGB(0, 150, 255)
+scStroke.Thickness = 1.5
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Parent = StatusContainer
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Position = UDim2.new(0, 8, 0, 0)
+StatusLabel.Size = UDim2.new(1, -16, 1, 0)
+StatusLabel.Font = Enum.Font.Code
+StatusLabel.Text = "Tik Tok: ValueHat"
+StatusLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
+StatusLabel.TextSize = 9
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.ZIndex = 3
 
