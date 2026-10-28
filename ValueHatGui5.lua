@@ -474,4 +474,111 @@ function ValueHatUI.Init()
         track.InputBegan:Connect(function(input)
             if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not sliderInput then
                 sliderDragging = true
+                    sliderInput = input
+                updateSlider(input)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input == sliderInput then
+                sliderDragging = false
+                sliderInput = nil
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if sliderDragging and input == sliderInput then
+                updateSlider(input)
+            end
+        end)
+    end
+
+    function Library:Input(name, titleText, placeholder, yPos, callback)
+        local inputFrame = Instance.new("Frame")
+        inputFrame.Name = name
+        inputFrame.Parent = ContentContainer
+        inputFrame.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
+        inputFrame.Position = UDim2.new(0.05, 0, 0, yPos)
+        inputFrame.Size = UDim2.new(0.9, 0, 0, 45)
+        inputFrame.ZIndex = 2
+
+        local ifCorner = Instance.new("UICorner")
+        ifCorner.CornerRadius = UDim.new(0, 4)
+        ifCorner.Parent = inputFrame
+
+        local ifStroke = Instance.new("UIStroke")
+        ifStroke.Parent = inputFrame
+        ifStroke.Color = Color3.fromRGB(0, 120, 220)
+        ifStroke.Thickness = 1.5
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Parent = inputFrame
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Position = UDim2.new(0, 8, 0, 2)
+        titleLabel.Size = UDim2.new(1, -16, 0, 16)
+        titleLabel.Font = Enum.Font.GothamSemibold
+        titleLabel.Text = titleText
+        titleLabel.TextColor3 = Color3.fromRGB(180, 210, 255)
+        titleLabel.TextSize = 10
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        titleLabel.ZIndex = 3
+
+        local textBox = Instance.new("TextBox")
+        textBox.Parent = inputFrame
+        textBox.BackgroundColor3 = Color3.fromRGB(12, 20, 38)
+        textBox.BorderSizePixel = 0
+        textBox.Position = UDim2.new(0, 6, 0, 20)
+        textBox.Size = UDim2.new(1, -12, 0, 20)
+        textBox.Font = Enum.Font.Gotham
+        textBox.PlaceholderText = placeholder
+        textBox.PlaceholderColor3 = Color3.fromRGB(100, 130, 170)
+        textBox.Text = ""
+        textBox.TextColor3 = Color3.fromRGB(220, 240, 255)
+        textBox.TextSize = 10
+        textBox.TextXAlignment = Enum.TextXAlignment.Left
+        textBox.ZIndex = 3
+
+        local tbCorner = Instance.new("UICorner")
+        tbCorner.CornerRadius = UDim.new(0, 3)
+        tbCorner.Parent = textBox
+
+        textBox.FocusLost:Connect(function(enterPressed)
+            callback(textBox.Text, enterPressed)
+        end)
+    end
+
+    function Library:Status(name, text, yPos)
+        local statusContainer = Instance.new("Frame")
+        statusContainer.Name = name .. "_Container"
+        statusContainer.Parent = ContentContainer
+        statusContainer.BackgroundColor3 = Color3.fromRGB(14, 22, 40)
+        statusContainer.Position = UDim2.new(0.05, 0, 0, yPos)
+        statusContainer.Size = UDim2.new(0.9, 0, 0, 22)
+        statusContainer.ZIndex = 2
+
+        local scCorner = Instance.new("UICorner")
+        scCorner.CornerRadius = UDim.new(0, 4)
+        scCorner.Parent = statusContainer
+
+        local scStroke = Instance.new("UIStroke")
+        scStroke.Parent = statusContainer
+        scStroke.Color = Color3.fromRGB(0, 150, 255)
+        scStroke.Thickness = 1.5
+
+        local statusLabel = Instance.new("TextLabel")
+        statusLabel.Name = name
+        statusLabel.Parent = statusContainer
+        statusLabel.BackgroundTransparency = 1
+        statusLabel.Position = UDim2.new(0, 8, 0, 0)
+        statusLabel.Size = UDim2.new(1, -16, 1, 0)
+        statusLabel.Font = Enum.Font.Code
+        statusLabel.Text = text
+        statusLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
+        statusLabel.TextSize = 9
+        statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+        statusLabel.ZIndex = 3
+    end
+
+    return Library
+end
+
+return ValueHatUI
                
