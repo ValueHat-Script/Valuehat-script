@@ -1,5 +1,5 @@
 -- =====================================================================
--- ⚡ VALUEHAT CYBERPUNK UI LIBRARY (Part 1)
+-- ⚡ VALUEHAT CYBERPUNK UI LIBRARY (Pure White Text & Tech Font)
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -80,9 +80,9 @@ function ValueHatUI.Init(titleText)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Position = UDim2.new(0, 8, 0, 4)
     TitleLabel.Size = UDim2.new(0.7, 0, 1, -8)
-    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.Font = Enum.Font.Jura -- 🌟 更改為科技感字體
     TitleLabel.Text = titleText or "⚡ VALUEHAT"
-    TitleLabel.TextColor3 = Color3.fromRGB(190, 220, 255)
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
     TitleLabel.TextScaled = true
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.ZIndex = 3
@@ -123,9 +123,9 @@ function ValueHatUI.Init(titleText)
     ToggleCollapseBtn.BackgroundTransparency = 0
     ToggleCollapseBtn.Position = UDim2.new(1, -26, 0.5, -10)
     ToggleCollapseBtn.Size = UDim2.new(0, 20, 0, 20)
-    ToggleCollapseBtn.Font = Enum.Font.GothamBold
+    ToggleCollapseBtn.Font = Enum.Font.Jura -- 🌟
     ToggleCollapseBtn.Text = "-"
-    ToggleCollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleCollapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
     ToggleCollapseBtn.TextSize = 14
     ToggleCollapseBtn.ZIndex = 3
 
@@ -156,7 +156,7 @@ function ValueHatUI.Init(titleText)
         TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
         ToggleCollapseBtn.Text = isCollapsed and "+" or "-"
     end)
-    -- ==================== 🛠️ 自動排版元件庫 ====================
+        -- ==================== 🛠️ 自動排版元件庫 (純白文字版) ====================
 
     local Library = {}
     local nextYPos = 10 
@@ -184,21 +184,20 @@ function ValueHatUI.Init(titleText)
         btn.Name = name
         btn.Parent = btnContainer
         btn.BackgroundTransparency = 1
-        btn.Size = UDim2.new(1, 0, 1, 0)
-        btn.Font = Enum.Font.GothamSemibold
+        btn.Position = UDim2.new(0, 6, 0, 4)
+        btn.Size = UDim2.new(1, -12, 1, -8)
+        btn.Font = Enum.Font.Jura -- 🌟
         btn.Text = text
-        btn.TextColor3 = Color3.fromRGB(180, 210, 255)
-        btn.TextSize = 10
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        btn.TextScaled = true
         btn.ZIndex = 3
 
         btn.MouseButton1Click:Connect(function()
             local flashInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             local resetInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             TweenService:Create(btnContainer, flashInfo, {BackgroundColor3 = Color3.fromRGB(0, 140, 255)}):Play()
-            TweenService:Create(btn, flashInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
             task.delay(0.1, function()
                 TweenService:Create(btnContainer, resetInfo, {BackgroundColor3 = Color3.fromRGB(16, 28, 52)}):Play()
-                TweenService:Create(btn, resetInfo, {TextColor3 = Color3.fromRGB(180, 210, 255)}):Play()
             end)
             if callback then callback() end
         end)
@@ -229,12 +228,12 @@ function ValueHatUI.Init(titleText)
         local label = Instance.new("TextLabel")
         label.Parent = toggleFrame
         label.BackgroundTransparency = 1
-        label.Position = UDim2.new(0, 8, 0, 0)
-        label.Size = UDim2.new(0.6, 0, 1, 0)
-        label.Font = Enum.Font.GothamSemibold
+        label.Position = UDim2.new(0, 8, 0, 4)
+        label.Size = UDim2.new(0.65, 0, 1, -8)
+        label.Font = Enum.Font.Jura -- 🌟
         label.Text = text
-        label.TextColor3 = Color3.fromRGB(180, 210, 255)
-        label.TextSize = 10
+        label.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        label.TextScaled = true
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -277,13 +276,13 @@ function ValueHatUI.Init(titleText)
                 TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(24, 40, 70)}):Play()
                 TweenService:Create(knob, tweenInfo, {
                     Position = UDim2.new(1, -16, 0.5, -7), 
-                    BackgroundColor3 = Color3.fromRGB(0, 220, 110) -- 開啟時圓圈變綠色
+                    BackgroundColor3 = Color3.fromRGB(0, 220, 110)
                 }):Play()
             else
                 TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(24, 40, 70)}):Play()
                 TweenService:Create(knob, tweenInfo, {
                     Position = UDim2.new(0, 2, 0.5, -7), 
-                    BackgroundColor3 = Color3.fromRGB(150, 180, 220) -- 關閉時恢復灰色
+                    BackgroundColor3 = Color3.fromRGB(150, 180, 220)
                 }):Play()
             end
             callback(state)
@@ -316,12 +315,12 @@ function ValueHatUI.Init(titleText)
         local label = Instance.new("TextLabel")
         label.Parent = dropFrame
         label.BackgroundTransparency = 1
-        label.Position = UDim2.new(0, 8, 0, 0)
-        label.Size = UDim2.new(1, -25, 0, 30)
-        label.Font = Enum.Font.GothamSemibold
+        label.Position = UDim2.new(0, 8, 0, 4)
+        label.Size = UDim2.new(1, -30, 1, -8)
+        label.Font = Enum.Font.Jura -- 🌟
         label.Text = text .. ": " .. options[1]
-        label.TextColor3 = Color3.fromRGB(180, 210, 255)
-        label.TextSize = 10
+        label.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        label.TextScaled = true
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 6
 
@@ -330,10 +329,10 @@ function ValueHatUI.Init(titleText)
         arrow.BackgroundTransparency = 1
         arrow.Position = UDim2.new(1, -22, 0, 0)
         arrow.Size = UDim2.new(0, 20, 0, 30)
-        arrow.Font = Enum.Font.GothamBold
+        arrow.Font = Enum.Font.Jura -- 🌟
         arrow.Text = "▼"
-        arrow.TextColor3 = Color3.fromRGB(150, 180, 220)
-        arrow.TextSize = 9
+        arrow.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        arrow.TextSize = 10
         arrow.ZIndex = 6
 
         local isOpen = false
@@ -368,10 +367,10 @@ function ValueHatUI.Init(titleText)
             optBtn.BorderSizePixel = 0
             optBtn.Position = UDim2.new(0, 0, 0, (i - 1) * optionHeight)
             optBtn.Size = UDim2.new(1, 0, 0, optionHeight - 2)
-            optBtn.Font = Enum.Font.Gotham
+            optBtn.Font = Enum.Font.Jura -- 🌟
             optBtn.Text = opt
-            optBtn.TextColor3 = Color3.fromRGB(200, 220, 255)
-            optBtn.TextSize = 10
+            optBtn.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+            optBtn.TextScaled = true
             optBtn.ZIndex = 11
 
             optBtn.MouseButton1Click:Connect(function()
@@ -438,10 +437,10 @@ function ValueHatUI.Init(titleText)
         label.BackgroundTransparency = 1
         label.Position = UDim2.new(0, 8, 0, 2)
         label.Size = UDim2.new(1, -16, 0, 16)
-        label.Font = Enum.Font.GothamSemibold
+        label.Font = Enum.Font.Jura -- 🌟
         label.Text = text .. ": " .. default
-        label.TextColor3 = Color3.fromRGB(180, 210, 255)
-        label.TextSize = 10
+        label.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        label.TextScaled = true
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -459,7 +458,7 @@ function ValueHatUI.Init(titleText)
 
         local fill = Instance.new("Frame")
         fill.Parent = track
-        fill.BackgroundColor3 = Color3.fromRGB(0, 220, 110) -- 綠色進度條
+        fill.BackgroundColor3 = Color3.fromRGB(0, 220, 110)
         fill.BorderSizePixel = 0
         local initialPercent = (default - min) / (max - min)
         fill.Size = UDim2.new(initialPercent, 0, 1, 0)
@@ -541,10 +540,10 @@ function ValueHatUI.Init(titleText)
         titleLabel.BackgroundTransparency = 1
         titleLabel.Position = UDim2.new(0, 8, 0, 2)
         titleLabel.Size = UDim2.new(1, -16, 0, 16)
-        titleLabel.Font = Enum.Font.GothamSemibold
+        titleLabel.Font = Enum.Font.Jura -- 🌟
         titleLabel.Text = titleText
-        titleLabel.TextColor3 = Color3.fromRGB(180, 210, 255)
-        titleLabel.TextSize = 10
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        titleLabel.TextScaled = true
         titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         titleLabel.ZIndex = 3
 
@@ -554,12 +553,12 @@ function ValueHatUI.Init(titleText)
         textBox.BorderSizePixel = 0
         textBox.Position = UDim2.new(0, 6, 0, 20)
         textBox.Size = UDim2.new(1, -12, 0, 20)
-        textBox.Font = Enum.Font.Gotham
+        textBox.Font = Enum.Font.Jura -- 🌟
         textBox.PlaceholderText = placeholder
-        textBox.PlaceholderColor3 = Color3.fromRGB(100, 130, 170)
+        textBox.PlaceholderColor3 = Color3.fromRGB(180, 180, 180) -- 稍微淺一點的灰色
         textBox.Text = ""
-        textBox.TextColor3 = Color3.fromRGB(220, 240, 255)
-        textBox.TextSize = 10
+        textBox.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        textBox.TextScaled = true
         textBox.TextXAlignment = Enum.TextXAlignment.Left
         textBox.ZIndex = 3
 
@@ -600,10 +599,10 @@ function ValueHatUI.Init(titleText)
         statusLabel.BackgroundTransparency = 1
         statusLabel.Position = UDim2.new(0, 8, 0, 0)
         statusLabel.Size = UDim2.new(1, -16, 1, 0)
-        statusLabel.Font = Enum.Font.Code
+        statusLabel.Font = Enum.Font.Jura -- 🌟 (或是你也可以改回 Code)
         statusLabel.Text = text
-        statusLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
-        statusLabel.TextSize = 9
+        statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- 🌟 純白文字
+        statusLabel.TextScaled = true
         statusLabel.TextXAlignment = Enum.TextXAlignment.Left
         statusLabel.ZIndex = 3
 
