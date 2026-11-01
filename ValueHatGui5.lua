@@ -1,33 +1,28 @@
 -- =====================================================================
--- ⚡ VALUEHAT CYBERPUNK UI LIBRARY (GitHub Open-Source Template)
+-- ⚡ VALUEHAT CYBERPUNK UI LIBRARY (Part 1)
 -- =====================================================================
 
 local ValueHatUI = {}
 
-function ValueHatUI.Init()
+function ValueHatUI.Init(titleText)
     local CoreGui = game:GetService("CoreGui")
     local TweenService = game:GetService("TweenService")
     local Players = game:GetService("Players")
     local UserInputService = game:GetService("UserInputService")
     local LocalPlayer = Players.LocalPlayer
 
-    -- 防止重複執行畫面疊加
     if CoreGui:FindFirstChild("TechCyberGui") then
         CoreGui.TechCyberGui:Destroy()
     end
 
-    -- 建立主 ScreenGui
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "TechCyberGui"
     ScreenGui.Parent = CoreGui
     ScreenGui.ResetOnSpawn = false
 
-    -- 預先計算總高度 (動態不留白)
     local TITLE_HEIGHT = 32
-    local TOTAL_CONTENT_HEIGHT = 10 + 30 + 6 + 30 + 6 + 30 + 6 + 40 + 6 + 45 + 6 + 22 + 10
-    local INITIAL_HEIGHT = TITLE_HEIGHT + TOTAL_CONTENT_HEIGHT
+    local INITIAL_HEIGHT = TITLE_HEIGHT + 20 
 
-    -- 🌟 放大版九宮格漸層藍紫色光暈陰影 (ImageLabel Shadow)
     local Shadow = Instance.new("ImageLabel")
     Shadow.Name = "Shadow"
     Shadow.Parent = ScreenGui
@@ -38,10 +33,9 @@ function ValueHatUI.Init()
     Shadow.ScaleType = Enum.ScaleType.Slice
     Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
     Shadow.ZIndex = 0
-    Shadow.Position = UDim2.new(0.5, -110 - 25, 0.5, -INITIAL_HEIGHT / 2 - 25)
-    Shadow.Size = UDim2.new(0, 220 + 50, 0, INITIAL_HEIGHT + 50)
+    Shadow.Position = UDim2.new(0.5, -135, 0.5, -INITIAL_HEIGHT / 2 - 25)
+    Shadow.Size = UDim2.new(0, 270, 0, INITIAL_HEIGHT + 50)
 
-    -- 主視窗背景
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
@@ -64,7 +58,6 @@ function ValueHatUI.Init()
     UIStroke.Transparency = 0
     UIStroke.Thickness = 1.5
 
-    -- 頂部標題列
     local TitleBar = Instance.new("Frame")
     TitleBar.Parent = MainFrame
     TitleBar.BackgroundColor3 = Color3.fromRGB(16, 24, 44)
@@ -85,23 +78,21 @@ function ValueHatUI.Init()
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Parent = TitleBar
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Position = UDim2.new(0, 8, 0, 0)
-    TitleLabel.Size = UDim2.new(0.75, 0, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 8, 0, 4)
+    TitleLabel.Size = UDim2.new(0.7, 0, 1, -8)
     TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.Text = "⚡ VALUEHAT"
+    TitleLabel.Text = titleText or "⚡ VALUEHAT"
     TitleLabel.TextColor3 = Color3.fromRGB(190, 220, 255)
-    TitleLabel.TextSize = 11
+    TitleLabel.TextScaled = true
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.ZIndex = 3
 
-    -- 同步陰影位置與大小函數
     local function syncShadow(targetSize)
         Shadow.Position = UDim2.new(MainFrame.Position.X.Scale, MainFrame.Position.X.Offset - 25, MainFrame.Position.Y.Scale, MainFrame.Position.Y.Offset - 25)
         Shadow.Size = UDim2.new(targetSize.X.Scale, targetSize.X.Offset + 50, targetSize.Y.Scale, targetSize.Y.Offset + 50)
     end
     syncShadow(MainFrame.Size)
 
-    -- 拖曳系統
     local dragging, dragStart, startPos, activeInput = false, nil, nil, nil
     TitleBar.InputBegan:Connect(function(input)
         if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not activeInput then
@@ -117,7 +108,6 @@ function ValueHatUI.Init()
         end
     end)
 
-    -- 內容容器
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Name = "ContentContainer"
     ContentContainer.Parent = MainFrame
@@ -127,7 +117,6 @@ function ValueHatUI.Init()
     ContentContainer.ClipsDescendants = true
     ContentContainer.ZIndex = 2
 
-    -- 收合/展開按鈕
     local ToggleCollapseBtn = Instance.new("TextButton")
     ToggleCollapseBtn.Parent = TitleBar
     ToggleCollapseBtn.BackgroundColor3 = Color3.fromRGB(20, 60, 130)
@@ -145,34 +134,41 @@ function ValueHatUI.Init()
     TCBRCorner.Parent = ToggleCollapseBtn
 
     local isCollapsed = false
+    local currentHeight = 10 
+
+    local function updateWindowHeight(addedHeight)
+        currentHeight = currentHeight + addedHeight + 6 
+        local targetHeight = TITLE_HEIGHT + currentHeight + 10
+        
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        if not isCollapsed then
+            TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 220, 0, targetHeight)}):Play()
+            TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
+        end
+    end
+
     ToggleCollapseBtn.MouseButton1Click:Connect(function()
         isCollapsed = not isCollapsed
         local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        if isCollapsed then
-            ToggleCollapseBtn.Text = "+"
-            local targetSize = UDim2.new(0, 220, 0, TITLE_HEIGHT)
-            TweenService:Create(MainFrame, tweenInfo, {Size = targetSize}):Play()
-            TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(targetSize.X.Scale, targetSize.X.Offset + 50, targetSize.Y.Scale, targetSize.Y.Offset + 50)}):Play()
-        else
-            ToggleCollapseBtn.Text = "-"
-            local targetSize = UDim2.new(0, 220, 0, INITIAL_HEIGHT)
-            TweenService:Create(MainFrame, tweenInfo, {Size = targetSize}):Play()
-            TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(targetSize.X.Scale, targetSize.X.Offset + 50, targetSize.Y.Scale, targetSize.Y.Offset + 50)}):Play()
-        end
+        local targetHeight = isCollapsed and TITLE_HEIGHT or (TITLE_HEIGHT + currentHeight + 10)
+        
+        TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 220, 0, targetHeight)}):Play()
+        TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
+        ToggleCollapseBtn.Text = isCollapsed and "+" or "-"
     end)
-
-
-    -- ==================== 🛠️ 元件建構子函數庫 ====================
+    -- ==================== 🛠️ 自動排版元件庫 ====================
 
     local Library = {}
+    local nextYPos = 10 
 
-    function Library:Button(name, text, yPos, callback)
+    function Library:Button(name, text, callback)
+        local compHeight = 30
         local btnContainer = Instance.new("Frame")
         btnContainer.Name = name .. "_Container"
         btnContainer.Parent = ContentContainer
         btnContainer.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
-        btnContainer.Position = UDim2.new(0.05, 0, 0, yPos)
-        btnContainer.Size = UDim2.new(0.9, 0, 0, 30)
+        btnContainer.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        btnContainer.Size = UDim2.new(0.9, 0, 0, compHeight)
         btnContainer.ZIndex = 2
 
         local containerCorner = Instance.new("UICorner")
@@ -206,15 +202,19 @@ function ValueHatUI.Init()
             end)
             if callback then callback() end
         end)
+
+        updateWindowHeight(compHeight)
+        nextYPos = nextYPos + compHeight + 6
     end
 
-    function Library:Toggle(name, text, yPos, callback)
+    function Library:Toggle(name, text, callback)
+        local compHeight = 30
         local toggleFrame = Instance.new("Frame")
         toggleFrame.Name = name
         toggleFrame.Parent = ContentContainer
         toggleFrame.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
-        toggleFrame.Position = UDim2.new(0.05, 0, 0, yPos)
-        toggleFrame.Size = UDim2.new(0.9, 0, 0, 30)
+        toggleFrame.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        toggleFrame.Size = UDim2.new(0.9, 0, 0, compHeight)
         toggleFrame.ZIndex = 2
 
         local tfCorner = Instance.new("UICorner")
@@ -274,23 +274,33 @@ function ValueHatUI.Init()
             state = not state
             local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             if state then
-                TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(0, 120, 220)}):Play()
-                TweenService:Create(knob, tweenInfo, {Position = UDim2.new(1, -16, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+                TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(24, 40, 70)}):Play()
+                TweenService:Create(knob, tweenInfo, {
+                    Position = UDim2.new(1, -16, 0.5, -7), 
+                    BackgroundColor3 = Color3.fromRGB(0, 220, 110) -- 開啟時圓圈變綠色
+                }):Play()
             else
                 TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(24, 40, 70)}):Play()
-                TweenService:Create(knob, tweenInfo, {Position = UDim2.new(0, 2, 0.5, -7), BackgroundColor3 = Color3.fromRGB(150, 180, 220)}):Play()
+                TweenService:Create(knob, tweenInfo, {
+                    Position = UDim2.new(0, 2, 0.5, -7), 
+                    BackgroundColor3 = Color3.fromRGB(150, 180, 220) -- 關閉時恢復灰色
+                }):Play()
             end
             callback(state)
         end)
+
+        updateWindowHeight(compHeight)
+        nextYPos = nextYPos + compHeight + 6
     end
 
-    function Library:Dropdown(name, text, options, yPos, callback)
+    function Library:Dropdown(name, text, options, callback)
+        local compHeight = 30
         local dropFrame = Instance.new("Frame")
         dropFrame.Name = name
         dropFrame.Parent = ContentContainer
         dropFrame.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
-        dropFrame.Position = UDim2.new(0.05, 0, 0, yPos)
-        dropFrame.Size = UDim2.new(0.9, 0, 0, 30)
+        dropFrame.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        dropFrame.Size = UDim2.new(0.9, 0, 0, compHeight)
         dropFrame.ClipsDescendants = false
         dropFrame.ZIndex = 5
 
@@ -375,12 +385,6 @@ function ValueHatUI.Init()
             end)
         end
 
-        listContainer.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseWheel then
-                listContainer.CanvasPosition = Vector2.new(0, math.clamp(listContainer.CanvasPosition.Y - (input.Position.Z * 20), 0, math.max(0, calculatedListHeight - finalShowHeight)))
-            end
-        end)
-
         local mainBtn = Instance.new("TextButton")
         mainBtn.Parent = dropFrame
         mainBtn.BackgroundTransparency = 1
@@ -405,15 +409,19 @@ function ValueHatUI.Init()
                 arrow.Text = "▼"
             end
         end)
+
+        updateWindowHeight(compHeight)
+        nextYPos = nextYPos + compHeight + 6
     end
 
-    function Library:Slider(name, text, min, max, default, yPos, callback)
+    function Library:Slider(name, text, min, max, default, callback)
+        local compHeight = 40
         local sliderFrame = Instance.new("Frame")
         sliderFrame.Name = name
         sliderFrame.Parent = ContentContainer
         sliderFrame.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
-        sliderFrame.Position = UDim2.new(0.05, 0, 0, yPos)
-        sliderFrame.Size = UDim2.new(0.9, 0, 0, 40)
+        sliderFrame.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        sliderFrame.Size = UDim2.new(0.9, 0, 0, compHeight)
         sliderFrame.ZIndex = 2
 
         local sfCorner = Instance.new("UICorner")
@@ -451,14 +459,28 @@ function ValueHatUI.Init()
 
         local fill = Instance.new("Frame")
         fill.Parent = track
-        fill.BackgroundColor3 = Color3.fromRGB(0, 120, 220)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 220, 110) -- 綠色進度條
         fill.BorderSizePixel = 0
-        fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+        local initialPercent = (default - min) / (max - min)
+        fill.Size = UDim2.new(initialPercent, 0, 1, 0)
         fill.ZIndex = 4
 
         local fillCorner = Instance.new("UICorner")
         fillCorner.CornerRadius = UDim.new(1, 0)
         fillCorner.Parent = fill
+
+        local sliderKnob = Instance.new("Frame")
+        sliderKnob.Parent = track
+        sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        sliderKnob.BorderSizePixel = 0
+        sliderKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+        sliderKnob.Position = UDim2.new(initialPercent, 0, 0.5, 0)
+        sliderKnob.Size = UDim2.new(0, 14, 0, 14)
+        sliderKnob.ZIndex = 5
+
+        local knobCorner = Instance.new("UICorner")
+        knobCorner.CornerRadius = UDim.new(1, 0)
+        knobCorner.Parent = sliderKnob
 
         local sliderDragging = false
         local sliderInput = nil
@@ -467,6 +489,7 @@ function ValueHatUI.Init()
             local pos = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
             local value = math.floor(min + ((max - min) * pos))
             fill.Size = UDim2.new(pos, 0, 1, 0)
+            sliderKnob.Position = UDim2.new(pos, 0, 0.5, 0)
             label.Text = text .. ": " .. value
             callback(value)
         end
@@ -474,7 +497,7 @@ function ValueHatUI.Init()
         track.InputBegan:Connect(function(input)
             if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not sliderInput then
                 sliderDragging = true
-                    sliderInput = input
+                sliderInput = input
                 updateSlider(input)
             end
         end)
@@ -489,15 +512,19 @@ function ValueHatUI.Init()
                 updateSlider(input)
             end
         end)
+
+        updateWindowHeight(compHeight)
+        nextYPos = nextYPos + compHeight + 6
     end
 
-    function Library:Input(name, titleText, placeholder, yPos, callback)
+    function Library:Input(name, titleText, placeholder, callback)
+        local compHeight = 45
         local inputFrame = Instance.new("Frame")
         inputFrame.Name = name
         inputFrame.Parent = ContentContainer
         inputFrame.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
-        inputFrame.Position = UDim2.new(0.05, 0, 0, yPos)
-        inputFrame.Size = UDim2.new(0.9, 0, 0, 45)
+        inputFrame.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        inputFrame.Size = UDim2.new(0.9, 0, 0, compHeight)
         inputFrame.ZIndex = 2
 
         local ifCorner = Instance.new("UICorner")
@@ -543,15 +570,19 @@ function ValueHatUI.Init()
         textBox.FocusLost:Connect(function(enterPressed)
             callback(textBox.Text, enterPressed)
         end)
+
+        updateWindowHeight(compHeight)
+        nextYPos = nextYPos + compHeight + 6
     end
 
-    function Library:Status(name, text, yPos)
+    function Library:Status(name, text)
+        local compHeight = 22
         local statusContainer = Instance.new("Frame")
         statusContainer.Name = name .. "_Container"
         statusContainer.Parent = ContentContainer
         statusContainer.BackgroundColor3 = Color3.fromRGB(14, 22, 40)
-        statusContainer.Position = UDim2.new(0.05, 0, 0, yPos)
-        statusContainer.Size = UDim2.new(0.9, 0, 0, 22)
+        statusContainer.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        statusContainer.Size = UDim2.new(0.9, 0, 0, compHeight)
         statusContainer.ZIndex = 2
 
         local scCorner = Instance.new("UICorner")
@@ -575,10 +606,12 @@ function ValueHatUI.Init()
         statusLabel.TextSize = 9
         statusLabel.TextXAlignment = Enum.TextXAlignment.Left
         statusLabel.ZIndex = 3
+
+        updateWindowHeight(compHeight)
+        nextYPos = nextYPos + compHeight + 6
     end
 
     return Library
 end
 
 return ValueHatUI
-               
