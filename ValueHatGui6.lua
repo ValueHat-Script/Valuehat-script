@@ -1,5 +1,5 @@
 -- =====================================================================
--- ⚡ VALUEHAT UI LIBRARY (TextSize 20 Version - Part 1)
+-- ⚡ VALUEHAT UI LIBRARY (TextSize 15 - Part 1)
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -156,7 +156,7 @@ function ValueHatUI.Init(titleText)
         TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
         ToggleCollapseBtn.Text = isCollapsed and "+" or "-"
     end)
-        -- ==================== 🛠️ 自動排版元件庫 (全部自動縮放版) ====================
+        -- ==================== 🛠️ 自動排版元件庫 (TextSize 15) ====================
 
     local Library = {}
     local nextYPos = 10 
@@ -189,7 +189,7 @@ function ValueHatUI.Init(titleText)
         btn.Font = Enum.Font.GothamSemibold
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.TextScaled = true -- 🌟 開啟自動縮放
+        btn.TextSize = 15 -- 🌟 字體大小設為 15
         btn.ZIndex = 3
 
         btn.MouseButton1Click:Connect(function()
@@ -233,7 +233,7 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = true -- 🌟 開啟自動縮放
+        label.TextSize = 15 -- 🌟 字體大小設為 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -320,7 +320,7 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text .. ": " .. options[1]
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = true -- 🌟 開啟自動縮放
+        label.TextSize = 15 -- 🌟 字體大小設為 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 6
 
@@ -332,7 +332,7 @@ function ValueHatUI.Init(titleText)
         arrow.Font = Enum.Font.GothamBold
         arrow.Text = "▼"
         arrow.TextColor3 = Color3.fromRGB(255, 255, 255)
-        arrow.TextScaled = true -- 🌟 箭頭也自動縮放
+        arrow.TextSize = 15 -- 🌟 箭頭字體設為 15
         arrow.ZIndex = 6
 
         local isOpen = false
@@ -370,7 +370,7 @@ function ValueHatUI.Init(titleText)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = opt
             optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            optBtn.TextScaled = true -- 🌟 開啟自動縮放
+            optBtn.TextSize = 15 -- 🌟 選項字體大小設為 15
             optBtn.ZIndex = 11
 
             optBtn.MouseButton1Click:Connect(function()
@@ -440,7 +440,7 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text .. ": " .. default
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = true -- 🌟 開啟自動縮放
+        label.TextSize = 15 -- 🌟 字體大小設為 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -543,7 +543,7 @@ function ValueHatUI.Init(titleText)
         titleLabel.Font = Enum.Font.GothamSemibold
         titleLabel.Text = titleText
         titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextScaled = true -- 🌟 開啟自動縮放
+        titleLabel.TextSize = 15 -- 🌟 字體大小設為 15
         titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         titleLabel.ZIndex = 3
 
@@ -558,7 +558,7 @@ function ValueHatUI.Init(titleText)
         textBox.PlaceholderColor3 = Color3.fromRGB(180, 180, 180)
         textBox.Text = ""
         textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        textBox.TextScaled = true -- 🌟 開啟自動縮放
+        textBox.TextSize = 15 -- 🌟 字體大小設為 15
         textBox.TextXAlignment = Enum.TextXAlignment.Left
         textBox.ZIndex = 3
 
@@ -602,7 +602,7 @@ function ValueHatUI.Init(titleText)
         statusLabel.Font = Enum.Font.Code
         statusLabel.Text = text
         statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        statusLabel.TextScaled = true -- 🌟 開啟自動縮放
+        statusLabel.TextSize = 15 -- 🌟 狀態欄字體大小設為 15
         statusLabel.TextXAlignment = Enum.TextXAlignment.Left
         statusLabel.ZIndex = 3
 
