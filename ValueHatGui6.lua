@@ -1,5 +1,5 @@
 -- =====================================================================
--- ⚡ VALUEHAT UI LIBRARY (All Auto-Scale Version - Part 1)
+-- ⚡ VALUEHAT UI LIBRARY (TextSize 20 Version - Part 1)
 -- =====================================================================
 
 local ValueHatUI = {}
