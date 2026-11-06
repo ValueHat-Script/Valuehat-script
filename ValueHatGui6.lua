@@ -1,5 +1,5 @@
 -- =====================================================================
--- ⚡ VALUEHAT UI LIBRARY (Fixed TextSize 15, Title Auto-Scale - Part 1)
+-- ⚡ VALUEHAT CYBERPUNK & CARTOON UI LIBRARY (Part 1)
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -83,7 +83,7 @@ function ValueHatUI.Init(titleText)
     TitleLabel.Font = Enum.Font.LuckiestGuy
     TitleLabel.Text = titleText or "⚡ VALUEHAT"
     TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleLabel.TextScaled = true -- 🌟 標題保持自動縮放
+    TitleLabel.TextScaled = true
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.ZIndex = 3
 
@@ -156,7 +156,7 @@ function ValueHatUI.Init(titleText)
         TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
         ToggleCollapseBtn.Text = isCollapsed and "+" or "-"
     end)
-        -- ==================== 🛠️ 自動排版元件庫 (固定大小 15) ====================
+        -- ==================== 🛠️ 自動排版元件庫 ====================
 
     local Library = {}
     local nextYPos = 10 
@@ -189,8 +189,8 @@ function ValueHatUI.Init(titleText)
         btn.Font = Enum.Font.GothamSemibold
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.TextScaled = false -- 🌟 取消自動縮放
-        btn.TextSize = 15     -- 🌟 固定字體 15
+        btn.TextScaled = false
+        btn.TextSize = 15
         btn.ZIndex = 3
 
         btn.MouseButton1Click:Connect(function()
@@ -234,8 +234,8 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = false -- 🌟 取消自動縮放
-        label.TextSize = 15     -- 🌟 固定字體 15
+        label.TextScaled = false
+        label.TextSize = 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -322,8 +322,8 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text .. ": " .. options[1]
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = false -- 🌟 取消自動縮放
-        label.TextSize = 15     -- 🌟 固定字體 15
+        label.TextScaled = false
+        label.TextSize = 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 6
 
@@ -339,11 +339,10 @@ function ValueHatUI.Init(titleText)
         arrow.ZIndex = 6
 
         local isOpen = false
-        local optionHeight = 26
+        local optionHeight = 28
         local maxVisibleOptions = 4
-        local calculatedListHeight = #options * optionHeight
-        local maxListHeight = maxVisibleOptions * optionHeight
-        local finalShowHeight = calculatedListHeight > maxListHeight and maxListHeight or calculatedListHeight
+        local totalListHeight = #options * optionHeight
+        local finalShowHeight = totalListHeight > (maxVisibleOptions * optionHeight) and (maxVisibleOptions * optionHeight) or totalListHeight
         local totalFrameHeight = 30 + finalShowHeight
 
         local listContainer = Instance.new("ScrollingFrame")
@@ -352,9 +351,10 @@ function ValueHatUI.Init(titleText)
         listContainer.BorderSizePixel = 0
         listContainer.Position = UDim2.new(0, 0, 0, 30)
         listContainer.Size = UDim2.new(1, 0, 0, 0)
-        listContainer.CanvasSize = UDim2.new(0, 0, 0, calculatedListHeight)
-        listContainer.ScrollBarThickness = 3
+        listContainer.CanvasSize = UDim2.new(0, 0, 0, totalListHeight)
+        listContainer.ScrollBarThickness = 4
         listContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+        listContainer.AutomaticCanvasSize = Enum.SizeConstraint.None
         listContainer.Visible = false
         listContainer.ZIndex = 10
 
@@ -363,18 +363,23 @@ function ValueHatUI.Init(titleText)
         listStroke.Color = Color3.fromRGB(0, 120, 220)
         listStroke.Thickness = 1
 
+        local uiListLayout = Instance.new("UIListLayout")
+        uiListLayout.Parent = listContainer
+        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        uiListLayout.Padding = UDim.new(0, 2)
+
         for i, opt in ipairs(options) do
             local optBtn = Instance.new("TextButton")
+            optBtn.Name = "Opt_" .. i
             optBtn.Parent = listContainer
             optBtn.BackgroundColor3 = Color3.fromRGB(22, 38, 68)
             optBtn.BorderSizePixel = 0
-            optBtn.Position = UDim2.new(0, 0, 0, (i - 1) * optionHeight)
-            optBtn.Size = UDim2.new(1, 0, 0, optionHeight - 2)
+            optBtn.Size = UDim2.new(1, -4, 0, optionHeight - 2)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = opt
             optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            optBtn.TextScaled = false -- 🌟 取消自動縮放
-            optBtn.TextSize = 15     -- 🌟 固定字體 15
+            optBtn.TextScaled = false
+            optBtn.TextSize = 15
             optBtn.ZIndex = 11
 
             optBtn.MouseButton1Click:Connect(function()
@@ -444,8 +449,8 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text .. ": " .. default
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = false -- 🌟 取消自動縮放
-        label.TextSize = 15     -- 🌟 固定字體 15
+        label.TextScaled = false
+        label.TextSize = 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -548,8 +553,8 @@ function ValueHatUI.Init(titleText)
         titleLabel.Font = Enum.Font.GothamSemibold
         titleLabel.Text = titleText
         titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextScaled = false -- 🌟 取消自動縮放
-        titleLabel.TextSize = 15     -- 🌟 固定字體 15
+        titleLabel.TextScaled = false
+        titleLabel.TextSize = 15
         titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         titleLabel.ZIndex = 3
 
@@ -564,8 +569,8 @@ function ValueHatUI.Init(titleText)
         textBox.PlaceholderColor3 = Color3.fromRGB(180, 180, 180)
         textBox.Text = ""
         textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        textBox.TextScaled = false -- 🌟 取消自動縮放
-        textBox.TextSize = 15     -- 🌟 固定字體 15
+        textBox.TextScaled = false
+        textBox.TextSize = 15
         textBox.TextXAlignment = Enum.TextXAlignment.Left
         textBox.ZIndex = 3
 
@@ -609,8 +614,8 @@ function ValueHatUI.Init(titleText)
         statusLabel.Font = Enum.Font.Code
         statusLabel.Text = text
         statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        statusLabel.TextScaled = false -- 🌟 取消自動縮放
-        statusLabel.TextSize = 15     -- 🌟 固定字體 15
+        statusLabel.TextScaled = false
+        statusLabel.TextSize = 15
         statusLabel.TextXAlignment = Enum.TextXAlignment.Left
         statusLabel.ZIndex = 3
 
