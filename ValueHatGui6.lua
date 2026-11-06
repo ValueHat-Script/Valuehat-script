@@ -1,5 +1,5 @@
 -- =====================================================================
--- ⚡ VALUEHAT CYBERPUNK UI LIBRARY (Complete Version - Part 1)
+-- ⚡ VALUEHAT UI LIBRARY (Fixed TextSize 15, Title Auto-Scale - Part 1)
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -83,7 +83,7 @@ function ValueHatUI.Init(titleText)
     TitleLabel.Font = Enum.Font.LuckiestGuy
     TitleLabel.Text = titleText or "⚡ VALUEHAT"
     TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleLabel.TextScaled = true
+    TitleLabel.TextScaled = true -- 🌟 標題保持自動縮放
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.ZIndex = 3
 
@@ -156,12 +156,11 @@ function ValueHatUI.Init(titleText)
         TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
         ToggleCollapseBtn.Text = isCollapsed and "+" or "-"
     end)
-        -- ==================== 🛠️ 自動排版元件庫 ====================
+    -- ==================== 🛠️ 自動排版元件庫 (固定大小 15) ====================
 
     local Library = {}
     local nextYPos = 10 
-
-    function Library:Button(name, text, callback)
+        function Library:Button(name, text, callback)
         local compHeight = 30
         local btnContainer = Instance.new("Frame")
         btnContainer.Name = name .. "_Container"
@@ -340,7 +339,7 @@ function ValueHatUI.Init(titleText)
 
         local isOpen = false
         local optionHeight = 26
-        local maxVisibleOptions = 4
+        local maxVisibleOptions = 5
         local calculatedListHeight = #options * optionHeight
         local maxListHeight = maxVisibleOptions * optionHeight
         local finalShowHeight = calculatedListHeight > maxListHeight and maxListHeight or calculatedListHeight
@@ -352,16 +351,12 @@ function ValueHatUI.Init(titleText)
         listContainer.BorderSizePixel = 0
         listContainer.Position = UDim2.new(0, 0, 0, 30)
         listContainer.Size = UDim2.new(1, 0, 0, 0)
-        listContainer.ScrollBarThickness = 3
+        listContainer.CanvasSize = UDim2.new(0, 0, 0, calculatedListHeight)
+        listContainer.ScrollBarThickness = 5
         listContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+        listContainer.AutomaticCanvasSize = Enum.AutomaticSize.None
         listContainer.Visible = false
         listContainer.ZIndex = 10
-
-        -- 🌟 自動排列與計算高度核心 (解決回彈、滑不動底問題)
-        local uiList = Instance.new("UIListLayout")
-        uiList.Parent = listContainer
-        uiList.SortOrder = Enum.SortOrder.LayoutIndex
-        uiList.Padding = UDim.new(0, 2)
 
         local listStroke = Instance.new("UIStroke")
         listStroke.Parent = listContainer
@@ -373,6 +368,7 @@ function ValueHatUI.Init(titleText)
             optBtn.Parent = listContainer
             optBtn.BackgroundColor3 = Color3.fromRGB(22, 38, 68)
             optBtn.BorderSizePixel = 0
+            optBtn.Position = UDim2.new(0, 0, 0, (i - 1) * optionHeight)
             optBtn.Size = UDim2.new(1, 0, 0, optionHeight - 2)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = opt
@@ -391,10 +387,6 @@ function ValueHatUI.Init(titleText)
                 callback(opt)
             end)
         end
-
-        uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            listContainer.CanvasSize = UDim2.new(0, 0, 0, uiList.AbsoluteContentSize.Y)
-        end)
 
         local mainBtn = Instance.new("TextButton")
         mainBtn.Parent = dropFrame
