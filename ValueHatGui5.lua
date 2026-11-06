@@ -1,5 +1,6 @@
 -- =====================================================================
--- ⚡ VALUEHAT UI LIBRARY (Fixed TextSize 15, Title Auto-Scale - Part 1)
+-- ⚡ VALUEHAT UI LIBRARY (Fixed TextSize 15, Title Auto-Scale)
+-- Dropdown 展開時視窗自動撐高 / 關閉回彈 / 收合狀態同步
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -21,7 +22,7 @@ function ValueHatUI.Init(titleText)
     ScreenGui.ResetOnSpawn = false
 
     local TITLE_HEIGHT = 32
-    local INITIAL_HEIGHT = TITLE_HEIGHT + 20 
+    local INITIAL_HEIGHT = TITLE_HEIGHT + 20
 
     local Shadow = Instance.new("ImageLabel")
     Shadow.Name = "Shadow"
@@ -99,7 +100,9 @@ function ValueHatUI.Init(titleText)
             dragging, activeInput, dragStart, startPos = true, input, input.Position, MainFrame.Position
         end
     end)
-    UserInputService.InputEnded:Connect(function(input) if input == activeInput then dragging, activeInput = false, nil end end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input == activeInput then dragging, activeInput = false, nil end
+    end)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input == activeInput then
             local delta = input.Position - dragStart
@@ -133,33 +136,46 @@ function ValueHatUI.Init(titleText)
     TCBRCorner.CornerRadius = UDim.new(0, 4)
     TCBRCorner.Parent = ToggleCollapseBtn
 
+    -- ==================== 視窗高度統一入口 ====================
     local isCollapsed = false
-    local currentHeight = 10 
+    local currentHeight = 10   -- 所有元件累積高度
+    local openExtras = {}      -- 每個展開中的 Dropdown 需要多出來的高度
+
+    local function getExtra()
+        local m = 0
+        for _, v in pairs(openExtras) do
+            if v > m then m = v end
+        end
+        return m
+    end
+
+    local function applyWindowSize()
+        local targetHeight
+        if isCollapsed then
+            targetHeight = TITLE_HEIGHT
+        else
+            targetHeight = TITLE_HEIGHT + currentHeight + 10 + getExtra()
+        end
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 220, 0, targetHeight)}):Play()
+        TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
+    end
 
     local function updateWindowHeight(addedHeight)
-        currentHeight = currentHeight + addedHeight + 6 
-        local targetHeight = TITLE_HEIGHT + currentHeight + 10
-        
-        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        currentHeight = currentHeight + addedHeight + 6
         if not isCollapsed then
-            TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 220, 0, targetHeight)}):Play()
-            TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
+            applyWindowSize()
         end
     end
 
     ToggleCollapseBtn.MouseButton1Click:Connect(function()
         isCollapsed = not isCollapsed
-        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local targetHeight = isCollapsed and TITLE_HEIGHT or (TITLE_HEIGHT + currentHeight + 10)
-        
-        TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, 220, 0, targetHeight)}):Play()
-        TweenService:Create(Shadow, tweenInfo, {Size = UDim2.new(0, 270, 0, targetHeight + 50)}):Play()
         ToggleCollapseBtn.Text = isCollapsed and "+" or "-"
-    end)
-        -- ==================== 🛠️ 自動排版元件庫 (固定大小 15) ====================
+        applyWindowSize()
+    end)    -- ==================== 🛠️ 自動排版元件庫 (固定大小 15) ====================
 
     local Library = {}
-    local nextYPos = 10 
+    local nextYPos = 10
 
     function Library:Button(name, text, callback)
         local compHeight = 30
@@ -189,8 +205,8 @@ function ValueHatUI.Init(titleText)
         btn.Font = Enum.Font.GothamSemibold
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.TextScaled = false -- 🌟 取消自動縮放
-        btn.TextSize = 15     -- 🌟 固定字體 15
+        btn.TextScaled = false
+        btn.TextSize = 15
         btn.ZIndex = 3
 
         btn.MouseButton1Click:Connect(function()
@@ -234,8 +250,8 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = false -- 🌟 取消自動縮放
-        label.TextSize = 15     -- 🌟 固定字體 15
+        label.TextScaled = false
+        label.TextSize = 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -277,13 +293,13 @@ function ValueHatUI.Init(titleText)
             if state then
                 TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(24, 40, 70)}):Play()
                 TweenService:Create(knob, tweenInfo, {
-                    Position = UDim2.new(1, -16, 0.5, -7), 
+                    Position = UDim2.new(1, -16, 0.5, -7),
                     BackgroundColor3 = Color3.fromRGB(0, 220, 110)
                 }):Play()
             else
                 TweenService:Create(switchBg, tweenInfo, {BackgroundColor3 = Color3.fromRGB(24, 40, 70)}):Play()
                 TweenService:Create(knob, tweenInfo, {
-                    Position = UDim2.new(0, 2, 0.5, -7), 
+                    Position = UDim2.new(0, 2, 0.5, -7),
                     BackgroundColor3 = Color3.fromRGB(150, 180, 220)
                 }):Play()
             end
@@ -296,11 +312,13 @@ function ValueHatUI.Init(titleText)
 
     function Library:Dropdown(name, text, options, callback)
         local compHeight = 30
+        local myY = nextYPos
+
         local dropFrame = Instance.new("Frame")
         dropFrame.Name = name
         dropFrame.Parent = ContentContainer
         dropFrame.BackgroundColor3 = Color3.fromRGB(16, 28, 52)
-        dropFrame.Position = UDim2.new(0.05, 0, 0, nextYPos)
+        dropFrame.Position = UDim2.new(0.05, 0, 0, myY)
         dropFrame.Size = UDim2.new(0.9, 0, 0, compHeight)
         dropFrame.ClipsDescendants = false
         dropFrame.ZIndex = 5
@@ -322,8 +340,8 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text .. ": " .. options[1]
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = false -- 🌟 取消自動縮放
-        label.TextSize = 15     -- 🌟 固定字體 15
+        label.TextScaled = false
+        label.TextSize = 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 6
 
@@ -346,6 +364,20 @@ function ValueHatUI.Init(titleText)
         local finalShowHeight = calculatedListHeight > maxListHeight and maxListHeight or calculatedListHeight
         local totalFrameHeight = 30 + finalShowHeight
 
+        -- 展開時,視窗需要比目前內容多撐的高度
+        local function setOpenExtra(open)
+            if open then
+                local baseHeight = currentHeight + 10
+                local needed = myY + totalFrameHeight + 6
+                openExtras[dropFrame] = math.max(0, needed - baseHeight)
+            else
+                openExtras[dropFrame] = nil
+            end
+            if not isCollapsed then
+                applyWindowSize()
+            end
+        end
+
         local listContainer = Instance.new("ScrollingFrame")
         listContainer.Parent = dropFrame
         listContainer.BackgroundColor3 = Color3.fromRGB(14, 24, 44)
@@ -355,6 +387,8 @@ function ValueHatUI.Init(titleText)
         listContainer.CanvasSize = UDim2.new(0, 0, 0, calculatedListHeight)
         listContainer.ScrollBarThickness = 3
         listContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+        listContainer.ElasticBehavior = Enum.ElasticBehavior.Never -- 🌟 關掉回彈
+        listContainer.ScrollingEnabled = true
         listContainer.Visible = false
         listContainer.ZIndex = 10
 
@@ -373,8 +407,8 @@ function ValueHatUI.Init(titleText)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = opt
             optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            optBtn.TextScaled = false -- 🌟 取消自動縮放
-            optBtn.TextSize = 15     -- 🌟 固定字體 15
+            optBtn.TextScaled = false
+            optBtn.TextSize = 15
             optBtn.ZIndex = 11
 
             optBtn.MouseButton1Click:Connect(function()
@@ -384,6 +418,7 @@ function ValueHatUI.Init(titleText)
                 TweenService:Create(dropFrame, TweenInfo.new(0.2), {Size = UDim2.new(0.9, 0, 0, 30)}):Play()
                 TweenService:Create(listContainer, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 0)}):Play()
                 arrow.Text = "▼"
+                setOpenExtra(false)
                 callback(opt)
             end)
         end
@@ -398,6 +433,7 @@ function ValueHatUI.Init(titleText)
         mainBtn.MouseButton1Click:Connect(function()
             isOpen = not isOpen
             local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            setOpenExtra(isOpen)
             if isOpen then
                 listContainer.Visible = true
                 TweenService:Create(dropFrame, tweenInfo, {Size = UDim2.new(0.9, 0, 0, totalFrameHeight)}):Play()
@@ -444,8 +480,8 @@ function ValueHatUI.Init(titleText)
         label.Font = Enum.Font.GothamSemibold
         label.Text = text .. ": " .. default
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.TextScaled = false -- 🌟 取消自動縮放
-        label.TextSize = 15     -- 🌟 固定字體 15
+        label.TextScaled = false
+        label.TextSize = 15
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.ZIndex = 3
 
@@ -548,8 +584,8 @@ function ValueHatUI.Init(titleText)
         titleLabel.Font = Enum.Font.GothamSemibold
         titleLabel.Text = titleText
         titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextScaled = false -- 🌟 取消自動縮放
-        titleLabel.TextSize = 15     -- 🌟 固定字體 15
+        titleLabel.TextScaled = false
+        titleLabel.TextSize = 15
         titleLabel.TextXAlignment = Enum.TextXAlignment.Left
         titleLabel.ZIndex = 3
 
@@ -564,8 +600,8 @@ function ValueHatUI.Init(titleText)
         textBox.PlaceholderColor3 = Color3.fromRGB(180, 180, 180)
         textBox.Text = ""
         textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        textBox.TextScaled = false -- 🌟 取消自動縮放
-        textBox.TextSize = 15     -- 🌟 固定字體 15
+        textBox.TextScaled = false
+        textBox.TextSize = 15
         textBox.TextXAlignment = Enum.TextXAlignment.Left
         textBox.ZIndex = 3
 
@@ -609,8 +645,8 @@ function ValueHatUI.Init(titleText)
         statusLabel.Font = Enum.Font.Code
         statusLabel.Text = text
         statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        statusLabel.TextScaled = false -- 🌟 取消自動縮放
-        statusLabel.TextSize = 15     -- 🌟 固定字體 15
+        statusLabel.TextScaled = false
+        statusLabel.TextSize = 15
         statusLabel.TextXAlignment = Enum.TextXAlignment.Left
         statusLabel.ZIndex = 3
 
