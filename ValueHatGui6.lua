@@ -339,10 +339,10 @@ function ValueHatUI.Init(titleText)
 
         local isOpen = false
         local optionHeight = 26
-        local maxVisibleOptions = 5
-        local calculatedListHeight = #options * optionHeight
+        local maxVisibleOptions = 4
+        local totalListHeight = #options * optionHeight
         local maxListHeight = maxVisibleOptions * optionHeight
-        local finalShowHeight = calculatedListHeight > maxListHeight and maxListHeight or calculatedListHeight
+        local finalShowHeight = totalListHeight > maxListHeight and maxListHeight or totalListHeight
         local totalFrameHeight = 30 + finalShowHeight
 
         local listContainer = Instance.new("ScrollingFrame")
@@ -351,10 +351,12 @@ function ValueHatUI.Init(titleText)
         listContainer.BorderSizePixel = 0
         listContainer.Position = UDim2.new(0, 0, 0, 30)
         listContainer.Size = UDim2.new(1, 0, 0, 0)
-        listContainer.CanvasSize = UDim2.new(0, 0, 0, calculatedListHeight)
-        listContainer.ScrollBarThickness = 5
+        
+        -- 🌟 修正：採用 AutomaticCanvasSize 配合 UIListLayout，徹底解決滑不到底問題
+        listContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        listContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+        listContainer.ScrollBarThickness = 6
         listContainer.ScrollingDirection = Enum.ScrollingDirection.Y
-        listContainer.AutomaticCanvasSize = Enum.AutomaticSize.None
         listContainer.Visible = false
         listContainer.ZIndex = 10
 
@@ -363,19 +365,28 @@ function ValueHatUI.Init(titleText)
         listStroke.Color = Color3.fromRGB(0, 120, 220)
         listStroke.Thickness = 1
 
+        local uiListLayout = Instance.new("UIListLayout")
+        uiListLayout.Parent = listContainer
+        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        uiListLayout.Padding = UDim.new(0, 2)
+
         for i, opt in ipairs(options) do
             local optBtn = Instance.new("TextButton")
             optBtn.Parent = listContainer
             optBtn.BackgroundColor3 = Color3.fromRGB(22, 38, 68)
             optBtn.BorderSizePixel = 0
-            optBtn.Position = UDim2.new(0, 0, 0, (i - 1) * optionHeight)
-            optBtn.Size = UDim2.new(1, 0, 0, optionHeight - 2)
+            optBtn.Size = UDim2.new(1, -4, 0, optionHeight - 2)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = opt
             optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
             optBtn.TextScaled = false
             optBtn.TextSize = 15
+            optBtn.LayoutOrder = i
             optBtn.ZIndex = 11
+
+            local optCorner = Instance.new("UICorner")
+            optCorner.CornerRadius = UDim.new(0, 3)
+            optCorner.Parent = optBtn
 
             optBtn.MouseButton1Click:Connect(function()
                 label.Text = text .. ": " .. opt
