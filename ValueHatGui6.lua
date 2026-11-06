@@ -1,5 +1,5 @@
 -- =====================================================================
--- ⚡ VALUEHAT CYBERPUNK & CARTOON UI LIBRARY (Part 1)
+-- ⚡ VALUEHAT CYBERPUNK UI LIBRARY (Complete Version - Part 1)
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -339,10 +339,11 @@ function ValueHatUI.Init(titleText)
         arrow.ZIndex = 6
 
         local isOpen = false
-        local optionHeight = 28
+        local optionHeight = 26
         local maxVisibleOptions = 4
-        local totalListHeight = #options * optionHeight
-        local finalShowHeight = totalListHeight > (maxVisibleOptions * optionHeight) and (maxVisibleOptions * optionHeight) or totalListHeight
+        local calculatedListHeight = #options * optionHeight
+        local maxListHeight = maxVisibleOptions * optionHeight
+        local finalShowHeight = calculatedListHeight > maxListHeight and maxListHeight or calculatedListHeight
         local totalFrameHeight = 30 + finalShowHeight
 
         local listContainer = Instance.new("ScrollingFrame")
@@ -351,30 +352,28 @@ function ValueHatUI.Init(titleText)
         listContainer.BorderSizePixel = 0
         listContainer.Position = UDim2.new(0, 0, 0, 30)
         listContainer.Size = UDim2.new(1, 0, 0, 0)
-        listContainer.CanvasSize = UDim2.new(0, 0, 0, totalListHeight)
-        listContainer.ScrollBarThickness = 4
+        listContainer.ScrollBarThickness = 3
         listContainer.ScrollingDirection = Enum.ScrollingDirection.Y
-        listContainer.AutomaticCanvasSize = Enum.SizeConstraint.None
         listContainer.Visible = false
         listContainer.ZIndex = 10
+
+        -- 🌟 自動排列與計算高度核心 (解決回彈、滑不動底問題)
+        local uiList = Instance.new("UIListLayout")
+        uiList.Parent = listContainer
+        uiList.SortOrder = Enum.SortOrder.LayoutIndex
+        uiList.Padding = UDim.new(0, 2)
 
         local listStroke = Instance.new("UIStroke")
         listStroke.Parent = listContainer
         listStroke.Color = Color3.fromRGB(0, 120, 220)
         listStroke.Thickness = 1
 
-        local uiListLayout = Instance.new("UIListLayout")
-        uiListLayout.Parent = listContainer
-        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        uiListLayout.Padding = UDim.new(0, 2)
-
         for i, opt in ipairs(options) do
             local optBtn = Instance.new("TextButton")
-            optBtn.Name = "Opt_" .. i
             optBtn.Parent = listContainer
             optBtn.BackgroundColor3 = Color3.fromRGB(22, 38, 68)
             optBtn.BorderSizePixel = 0
-            optBtn.Size = UDim2.new(1, -4, 0, optionHeight - 2)
+            optBtn.Size = UDim2.new(1, 0, 0, optionHeight - 2)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = opt
             optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -392,6 +391,10 @@ function ValueHatUI.Init(titleText)
                 callback(opt)
             end)
         end
+
+        uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            listContainer.CanvasSize = UDim2.new(0, 0, 0, uiList.AbsoluteContentSize.Y)
+        end)
 
         local mainBtn = Instance.new("TextButton")
         mainBtn.Parent = dropFrame
