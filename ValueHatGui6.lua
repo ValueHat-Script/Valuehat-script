@@ -1,6 +1,6 @@
 -- =====================================================================
 -- ⚡ VALUEHAT UI LIBRARY (Fixed TextSize 15, Title Auto-Scale)
--- Dropdown 展開時視窗自動撐高 / 關閉回彈 / 收合狀態同步
+-- Dropdown 展開自動撐高 / 關閉回彈 / 收合同步 / 文字鎖死不受系統字體影響
 -- =====================================================================
 
 local ValueHatUI = {}
@@ -120,6 +120,21 @@ function ValueHatUI.Init(titleText)
     ContentContainer.ClipsDescendants = true
     ContentContainer.ZIndex = 2
 
+    -- 🔒 鎖死文字大小,不受 Roblox 系統文字大小設定影響
+    local function lockText(obj, size)
+        if not (obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox")) then return end
+        if obj:FindFirstChildOfClass("UITextSizeConstraint") then return end
+        local c = Instance.new("UITextSizeConstraint")
+        c.MinTextSize = size
+        c.MaxTextSize = size
+        c.Parent = obj
+    end
+
+    -- 之後建立的所有元件文字(含下拉選項)自動上鎖
+    ContentContainer.DescendantAdded:Connect(function(d)
+        lockText(d, 15)
+    end)
+
     local ToggleCollapseBtn = Instance.new("TextButton")
     ToggleCollapseBtn.Parent = TitleBar
     ToggleCollapseBtn.BackgroundColor3 = Color3.fromRGB(20, 60, 130)
@@ -135,6 +150,8 @@ function ValueHatUI.Init(titleText)
     local TCBRCorner = Instance.new("UICorner")
     TCBRCorner.CornerRadius = UDim.new(0, 4)
     TCBRCorner.Parent = ToggleCollapseBtn
+
+    lockText(ToggleCollapseBtn, 14)
 
     -- ==================== 視窗高度統一入口 ====================
     local isCollapsed = false
