@@ -43,7 +43,7 @@ local function teleportMyCharacterTo(cf)
     end)
 end
 
--- ==================== Complete Obby 兩段式傳送邏輯 ====================
+-- ==================== Complete Obby 循序傳送邏輯 ====================
 local function completeObby()
     task.spawn(function()
         pcall(function()
@@ -53,29 +53,27 @@ local function completeObby()
                 return
             end
 
-            -- 1. 先傳送到 ObbyStart
             local obbyFolder = activitiesTest:FindFirstChild("Obby")
-            local obbyStart = obbyFolder and obbyFolder:FindFirstChild("ObbyStart")
-            local startCFrame = getTargetCFrame(obbyStart)
+            local steps = {
+                { label = "1/5 ObbyStart", obj = obbyFolder and obbyFolder:FindFirstChild("ObbyStart"), required = true },
+                { label = "2/5 Checkpoint1", obj = activitiesTest:FindFirstChild("Checkpoint1"), required = false },
+                { label = "3/5 Checkpoint2", obj = activitiesTest:FindFirstChild("Checkpoint2"), required = false },
+                { label = "4/5 Checkpoint3", obj = activitiesTest:FindFirstChild("Checkpoint3"), required = false },
+                { label = "5/5 ObbyFinish", obj = activitiesTest:FindFirstChild("ObbyFinish"), required = true },
+            }
 
-            if startCFrame then
-                teleportMyCharacterTo(startCFrame + Vector3.new(0, 3, 0))
-                print("[Complete Obby] 1/2 已傳送至 ObbyStart")
-                task.wait(0.3)
-            else
-                warn("[Complete Obby] 找不到 workspace.ActivitiesTest.Obby.ObbyStart！")
-                return
-            end
-
-            -- 2. 再傳送到 ObbyFinish
-            local obbyFinish = activitiesTest:FindFirstChild("ObbyFinish")
-            local finishCFrame = getTargetCFrame(obbyFinish)
-
-            if finishCFrame then
-                teleportMyCharacterTo(finishCFrame + Vector3.new(0, 3, 0))
-                print("[Complete Obby] 2/2 已傳送至 ObbyFinish！")
-            else
-                warn("[Complete Obby] 找不到 workspace.ActivitiesTest.ObbyFinish！")
+            for _, step in ipairs(steps) do
+                local targetCFrame = getTargetCFrame(step.obj)
+                if targetCFrame then
+                    teleportMyCharacterTo(targetCFrame + Vector3.new(0, 3, 0))
+                    print("[Complete Obby] 已傳送至 " .. step.label)
+                    task.wait(0.25)
+                elseif step.required then
+                    warn("[Complete Obby] 找不到必要節點: " .. step.label)
+                    return
+                else
+                    warn("[Complete Obby] 略過找不到的節點: " .. step.label)
+                end
             end
         end)
     end)
