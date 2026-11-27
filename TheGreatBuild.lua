@@ -451,7 +451,7 @@ end
 UI:Button("CompleteObbyBtn", "Complete Obby", completeObby)
 UI:Toggle("AutoBlockLeverToggle", "Auto Block Lever", onAutoBlockLeverToggle)
 UI:Toggle("AutoRingToggle", "Auto Ring", onAutoRingToggle)
-UI:Toggle("FindItemToggle", "Find Trophy", onFindItemToggle)
+UI:Toggle("FindItemToggle", "Find Item", onFindItemToggle)
 UI:Status("Status", "Tik Tok: ValueHat")
 
 print("[ValueHat] Complete Obby, Auto Block Lever, Auto Ring & Find Item script loaded!")
