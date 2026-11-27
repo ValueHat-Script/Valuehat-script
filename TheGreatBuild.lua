@@ -9,6 +9,8 @@ local LocalPlayer = Players.LocalPlayer
 local autoBlockLeverEnabled = false
 local autoRingEnabled = false
 local isRunningAutoRing = false
+local findItemEnabled = false
+local isRunningFindItem = false
 
 -- ==================== 取得目標座標輔助函數 ====================
 local function getTargetCFrame(obj)
@@ -45,7 +47,7 @@ local function getCharacterRoot()
     return myCharModel, root, humanoid
 end
 
--- ==================== 強化版角色傳送函數（Complete Obby 用） ====================
+-- ==================== 強化版角色傳送函數 ====================
 local function teleportMyCharacterTo(cf)
     if not cf then return false end
 
@@ -186,20 +188,26 @@ local function completeObby()
 end
 
 -- ==================== Auto Block Lever 循環 ====================
+local function firePromptSafe(prompt)
+    if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Enabled then return end
+    pcall(function()
+        if fireproximityprompt then
+            fireproximityprompt(prompt)
+        else
+            prompt:InputHoldBegin()
+            task.wait(prompt.HoldDuration or 0)
+            prompt:InputHoldEnd()
+        end
+    end)
+end
+
 local function triggerBlockLever()
     pcall(function()
         local hubLever = Workspace:FindFirstChild("HubLever")
         local baseDark = hubLever and hubLever:FindFirstChild("Base_Dark")
-        local prompt = baseDark and baseDark:FindFirstChildOfClass("ProximityPrompt") or (baseDark and baseDark:FindFirstChild("ProximityPrompt"))
-
-        if prompt and prompt:IsA("ProximityPrompt") then
-            if fireproximityprompt then
-                fireproximityprompt(prompt)
-            else
-                prompt:InputHoldBegin()
-                task.wait(prompt.HoldDuration or 0)
-                prompt:InputHoldEnd()
-            end
+        local prompt = baseDark and (baseDark:FindFirstChildOfClass("ProximityPrompt") or baseDark:FindFirstChild("ProximityPrompt"))
+        if prompt then
+            firePromptSafe(prompt)
         end
     end)
 end
@@ -309,6 +317,109 @@ task.spawn(function()
     end
 end)
 
+-- ==================== Find Item 邏輯 ====================
+local FIND_ITEM_RADIUS = 5   -- 觸發周圍 ProximityPrompt 的半徑（Studs）
+local FIND_ITEM_DELAY = 0.25 -- 傳送到每個 Model 後的停留與觸發時間
+
+local function getPromptPosition(prompt)
+    local parent = prompt.Parent
+    if not parent then return nil end
+    if parent:IsA("Attachment") then
+        return parent.WorldPosition
+    elseif parent:IsA("BasePart") then
+        return parent.Position
+    elseif parent:IsA("Model") then
+        local cf = getTargetCFrame(parent)
+        return cf and cf.Position or nil
+    end
+    return nil
+end
+
+local function triggerPromptsWithinRadius(centerPos, radius)
+    if not centerPos then return 0 end
+    local triggered = 0
+
+    for _, desc in ipairs(Workspace:GetDescendants()) do
+        if desc:IsA("ProximityPrompt") and desc.Enabled then
+            local pos = getPromptPosition(desc)
+            if pos and (pos - centerPos).Magnitude <= radius then
+                firePromptSafe(desc)
+                triggered = triggered + 1
+            end
+        end
+    end
+
+    return triggered
+end
+
+local function runFindItemOnce()
+    if isRunningFindItem then return end
+    isRunningFindItem = true
+
+    local ok, err = pcall(function()
+        local activitiesTest = Workspace:FindFirstChild("ActivitiesTest")
+        local scavengerHunt = activitiesTest and activitiesTest:FindFirstChild("ScavengerHunt")
+        if not scavengerHunt then
+            warn("[Find Item] 找不到 workspace.ActivitiesTest.ScavengerHunt！")
+            return
+        end
+
+        local models = {}
+        for _, child in ipairs(scavengerHunt:GetChildren()) do
+            if child:IsA("Model") then
+                table.insert(models, child)
+            end
+        end
+
+        -- 若直接子層沒有 Model，改搜尋整個 ScavengerHunt 底下的 Model
+        if #models == 0 then
+            for _, desc in ipairs(scavengerHunt:GetDescendants()) do
+                if desc:IsA("Model") then
+                    table.insert(models, desc)
+                end
+            end
+        end
+
+        print("[Find Item] 找到 Model 數量: " .. tostring(#models))
+        if #models == 0 then return end
+
+        for idx, model in ipairs(models) do
+            if not findItemEnabled then break end
+            if model and model.Parent then
+                local cf = getTargetCFrame(model)
+                if cf then
+                    teleportMyCharacterTo(cf + Vector3.new(0, 3, 0))
+                    task.wait(0.1)
+
+                    local _, root = getCharacterRoot()
+                    local checkPos = root and root.Position or cf.Position
+                    local count = triggerPromptsWithinRadius(checkPos, FIND_ITEM_RADIUS)
+                    print(string.format("[Find Item] (%d/%d) 已傳送至 %s，觸發 %d 個 Prompt", idx, #models, model.Name, count))
+
+                    task.wait(FIND_ITEM_DELAY)
+                end
+            end
+        end
+    end)
+
+    if not ok then
+        warn("[Find Item] 執行錯誤: " .. tostring(err))
+    end
+
+    isRunningFindItem = false
+end
+
+task.spawn(function()
+    while true do
+        if findItemEnabled and not isRunningFindItem then
+            runFindItemOnce()
+            task.wait(0.5)
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
 -- ==================== UI 設定 ====================
 local function onAutoBlockLeverToggle(enabled)
     autoBlockLeverEnabled = enabled
@@ -328,9 +439,19 @@ local function onAutoRingToggle(enabled)
     end
 end
 
+local function onFindItemToggle(enabled)
+    findItemEnabled = enabled
+    if enabled then
+        print("[Find Item] 已開啟")
+    else
+        print("[Find Item] 已關閉")
+    end
+end
+
 UI:Button("CompleteObbyBtn", "Complete Obby", completeObby)
 UI:Toggle("AutoBlockLeverToggle", "Auto Block Lever", onAutoBlockLeverToggle)
 UI:Toggle("AutoRingToggle", "Auto Ring", onAutoRingToggle)
+UI:Toggle("FindItemToggle", "Find Trophy", onFindItemToggle)
 UI:Status("Status", "Tik Tok: ValueHat")
 
-print("[ValueHat] Complete Obby, Auto Block Lever & Auto Ring (Continuous Tween) script loaded!")
+print("[ValueHat] Complete Obby, Auto Block Lever, Auto Ring & Find Item script loaded!")
